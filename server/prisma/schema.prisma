@@ -1,0 +1,225 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  phone        String?
+  passwordHash String
+  roleId       Int
+  role         Role          @relation(fields: [roleId], references: [id])
+  isActive     Boolean       @default(true)
+  lastLoginAt  DateTime?
+  otpCode      String?
+  otpExpiresAt DateTime?
+  createdAt    DateTime      @default(now())
+  transactions  Transaction[]
+  auditLogs     AuditLog[]
+  devoteeNotes  DevoteeNote[]
+  bookingNotes  BookingNote[]
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  isSystem    Boolean          @default(false)
+  users       User[]
+  permissions RolePermission[]
+}
+
+model MenuItem {
+  id          Int              @id @default(autoincrement())
+  key         String           @unique
+  label       String
+  icon        String?
+  path        String?
+  parentId    Int?
+  sortOrder   Int              @default(0)
+  permissions RolePermission[]
+}
+
+model RolePermission {
+  id         Int      @id @default(autoincrement())
+  roleId     Int
+  menuItemId Int
+  canView    Boolean  @default(false)
+  canCreate  Boolean  @default(false)
+  canEdit    Boolean  @default(false)
+  canDelete  Boolean  @default(false)
+  canExport  Boolean  @default(false)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, menuItemId])
+}
+
+model LookupType {
+  id        Int           @id @default(autoincrement())
+  code      String        @unique
+  name      String
+  isPosMenu Boolean       @default(false)
+  sortOrder Int           @default(0)
+  values    LookupValue[]
+}
+
+model LookupValue {
+  id         Int           @id @default(autoincrement())
+  typeId     Int
+  type       LookupType    @relation(fields: [typeId], references: [id])
+  parentId   Int?
+  parent     LookupValue?  @relation("SubValues", fields: [parentId], references: [id])
+  children   LookupValue[] @relation("SubValues")
+  nameEn     String
+  nameTa     String?
+  price      Decimal?      @db.Decimal(10, 2)
+  depositPct Int?
+  meta       Json?
+  isActive   Boolean       @default(true)
+  sortOrder  Int           @default(0)
+}
+
+model Devotee {
+  id                   Int           @id @default(autoincrement())
+  name                 String
+  phone                String?
+  altPhone             String?
+  icNumber             String?
+  address              String?
+  email                String?
+  memberType           String?
+  membershipTypeId     Int?
+  membershipTypeLabel  String?
+  membershipPrice      Decimal?      @db.Decimal(10, 2)
+  membershipMonths     Int?
+  membershipStartDate  DateTime?
+  membershipEndDate    DateTime?
+  membershipPaidVia    String?
+  createdAt            DateTime      @default(now())
+  transactions         Transaction[]
+  bookings             HallBooking[]
+  notes                DevoteeNote[]
+
+  @@index([phone])
+}
+
+model DevoteeNote {
+  id          Int      @id @default(autoincrement())
+  devoteeId   Int
+  devotee     Devotee  @relation(fields: [devoteeId], references: [id], onDelete: Cascade)
+  body        String   @db.Text
+  createdById Int
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([devoteeId])
+}
+
+model Transaction {
+  id               Int               @id @default(autoincrement())
+  clientUuid       String            @unique
+  receiptNo        String            @unique
+  localChitNo      String?
+  kind             String // ARCHANAI | DONATION | ANNADHANAM | HALL_PAYMENT
+  devoteeId        Int?
+  devotee          Devotee?          @relation(fields: [devoteeId], references: [id])
+  devoteeName      String?
+  starNatchathiram String?
+  items            TransactionItem[]
+  total            Decimal           @db.Decimal(10, 2)
+  paymentMode      String
+  status           String            @default("PAID") // PAID | CANCELLED | REFUNDED
+  bookingId        Int?
+  booking          HallBooking?      @relation(fields: [bookingId], references: [id])
+  createdById      Int
+  createdBy        User              @relation(fields: [createdById], references: [id])
+  deviceId         String?
+  txDate           DateTime          @default(now())
+  syncedAt         DateTime?
+
+  @@index([txDate])
+  @@index([kind])
+}
+
+model TransactionItem {
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  lookupValueId Int
+  nameSnapshot  String
+  priceSnapshot Decimal     @db.Decimal(10, 2)
+  qty           Int         @default(1)
+  lineTotal     Decimal     @db.Decimal(10, 2)
+}
+
+model HallBooking {
+  id            Int           @id @default(autoincrement())
+  clientUuid    String        @unique
+  bookingNo     String        @unique
+  devoteeId     Int
+  devotee       Devotee       @relation(fields: [devoteeId], references: [id])
+  eventTypeId   Int
+  eventDate     DateTime
+  startTime     DateTime
+  endTime       DateTime
+  hallRate      Decimal       @db.Decimal(10, 2)
+  depositDue    Decimal       @db.Decimal(10, 2)
+  depositPaidAt DateTime?
+  balanceDueAt  DateTime
+  balancePaidAt DateTime?
+  status        String        @default("PENDING_DEPOSIT")
+  notes         String?       @db.Text
+  reminders     Reminder[]
+  transactions  Transaction[]
+  bookingNotes  BookingNote[]
+  createdAt     DateTime      @default(now())
+
+  @@index([eventDate])
+}
+
+model BookingNote {
+  id          Int         @id @default(autoincrement())
+  bookingId   Int
+  booking     HallBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  note        String      @db.Text
+  createdById Int
+  createdBy   User        @relation(fields: [createdById], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Reminder {
+  id          Int         @id @default(autoincrement())
+  bookingId   Int
+  booking     HallBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  channel     String      @default("WHATSAPP")
+  scheduledAt DateTime
+  sentAt      DateTime?
+  status      String      @default("SCHEDULED")
+}
+
+model Setting {
+  key   String @id
+  value Json
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  before    Json?
+  after     Json?
+  ip        String?
+  createdAt DateTime @default(now())
+}
