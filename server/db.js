@@ -182,6 +182,14 @@ export const BookingNote = sequelize.define('BookingNote', {
   updatedAt: DataTypes.DATE,
 }, { tableName: 'bookingnote', timestamps: false });
 
+export const BookingCancelNote = sequelize.define('BookingCancelNote', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  bookingId: { type: DataTypes.INTEGER, allowNull: false, unique: true },
+  note: { type: DataTypes.TEXT, allowNull: false },
+  cancelledById: { type: DataTypes.INTEGER, allowNull: false },
+  createdAt: DataTypes.DATE,
+}, { tableName: 'bookingcancelnote', timestamps: false });
+
 export const Reminder = sequelize.define('Reminder', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   bookingId: { type: DataTypes.INTEGER, allowNull: false },
@@ -262,6 +270,12 @@ BookingNote.belongsTo(HallBooking, { foreignKey: 'bookingId' });
 
 User.hasMany(BookingNote, { foreignKey: 'createdById' });
 BookingNote.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
+
+HallBooking.hasOne(BookingCancelNote, { foreignKey: 'bookingId', as: 'cancelNote' });
+BookingCancelNote.belongsTo(HallBooking, { foreignKey: 'bookingId' });
+
+User.hasMany(BookingCancelNote, { foreignKey: 'cancelledById' });
+BookingCancelNote.belongsTo(User, { foreignKey: 'cancelledById', as: 'cancelledBy' });
 
 User.hasMany(AuditLog, { foreignKey: 'userId' });
 AuditLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });

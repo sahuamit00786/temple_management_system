@@ -497,3 +497,17 @@ SequelizeConnectionError: connect ETIMEDOUT
 [2026-07-09T07:03:13.684Z] [INFO] PORT → 2083
 [2026-07-09T07:03:14.170Z] [INFO] ✅ Database connected
 [2026-07-09T07:03:14.176Z] [INFO] ✅ Server running → http://localhost:2083/
+[2026-08-10T17:13:11.976Z] [INFO] === TMADJ SERVER STARTING ===
+[2026-08-10T17:13:11.978Z] [INFO] DB  → 187.127.159.160:3306 / caauto_temple_test_db
+[2026-08-10T17:13:11.978Z] [INFO] PORT → 2083
+[2026-08-10T17:13:14.715Z] [INFO] ✅ Database connected
+[2026-08-10T17:13:14.718Z] [INFO] ✅ Server running → http://localhost:2083/
+[2026-08-10T17:16:23.102Z] [INFO] === TMADJ SERVER STARTING ===
+[2026-08-10T17:16:23.104Z] [INFO] DB  → 187.127.159.160:3306 / caauto_temple_test_db
+[2026-08-10T17:16:23.104Z] [INFO] PORT → 2083
+[2026-08-10T17:16:23.579Z] [INFO] ✅ Database connected
+[2026-08-10T17:16:23.582Z] [INFO] ✅ Server running → http://localhost:2083/
+[2026-08-10T17:16:41.147Z] [CANCEL-ROUTE] HIT PATCH /api/v1/bookings/13/cancel origin=http://localhost:5173 auth=present ip=::1
+[2026-08-10T17:16:41.148Z] [CANCEL-ROUTE] processing booking id=13 user=1
+[2026-08-10T17:16:41.342Z] [CANCEL-ROUTE] success booking id=13
+[2026-08-10T17:16:41.344Z] [CANCEL-ROUTE] DONE id=13 status=200

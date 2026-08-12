@@ -71,6 +71,7 @@ export default function Dashboard() {
   // Cancel
   const [cancelling, setCancelling] = useState(null);
   const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelNote, setCancelNote] = useState('');
 
   // Pay
   const [paying, setPaying] = useState(null);
@@ -171,8 +172,8 @@ export default function Dashboard() {
   const cancelBooking = async () => {
     setCancelBusy(true);
     try {
-      await api(`/bookings/${cancelling.id}/cancel`, { method: 'PATCH' });
-      setCancelling(null); loadCal();
+      await api(`/bookings/${cancelling.id}/cancel`, { method: 'POST', body: { note: cancelNote.trim() } });
+      setCancelling(null); setCancelNote(''); loadCal();
     } catch (e) { alert(e.message); }
     finally { setCancelBusy(false); }
   };
@@ -180,7 +181,7 @@ export default function Dashboard() {
   const openPay = async (b) => {
     try {
       const full = await api(`/bookings/${b.id}`);
-      const totalPaid = full.transactions.reduce((s, t) => s + Number(t.total), 0);
+      const totalPaid = full.transactions.filter((t) => t.status === 'PAID').reduce((s, t) => s + Number(t.total), 0);
       const remaining = Number(full.hallRate) - totalPaid;
       if (remaining <= 0) { alert('Booking is already fully paid'); return; }
       setPayMode('CASH');
@@ -554,7 +555,7 @@ export default function Dashboard() {
                             </button>
                           )}
                           {can('bookings', 'delete') && b.status !== 'CANCELLED' && (
-                            <button className="btn-ghost !p-1.5 text-kumkum-600" title="Cancel booking" onClick={() => { setDayModal(null); setCancelling(b); }}><Trash2 size={14} /></button>
+                            <button className="btn-ghost !p-1.5 text-kumkum-600" title="Cancel booking" onClick={() => { setDayModal(null); setCancelNote(''); setCancelling(b); }}><Trash2 size={14} /></button>
                           )}
                         </div>
                       </div>
@@ -622,7 +623,7 @@ export default function Dashboard() {
         ) : (() => {
           const bk = viewingFull;
           const dev = bk.devotee || {};
-          const totalPaid = bk.transactions.reduce((s, t) => s + Number(t.total), 0);
+          const totalPaid = bk.transactions.filter((t) => t.status === 'PAID').reduce((s, t) => s + Number(t.total), 0);
           const balance = Number(bk.hallRate) - totalPaid;
           const fmtD = (d) => new Date(d).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' });
           const fmtT = (d) => new Date(d).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
@@ -660,19 +661,29 @@ export default function Dashboard() {
                   <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-2">Payment History</p>
                   <div className="rounded-lg border border-gold-300/50 overflow-hidden">
                     <table className="table !text-xs">
-                      <thead><tr><th>Receipt</th><th>Date</th><th>Mode</th><th className="text-right">Amount</th></tr></thead>
+                      <thead><tr><th>Receipt</th><th>Date</th><th>Mode</th><th className="text-right">Amount</th><th>Status</th></tr></thead>
                       <tbody>
                         {bk.transactions.map((t) => (
                           <tr key={t.id}>
                             <td className="font-mono">{t.receiptNo}</td>
                             <td>{fmtDT(t.txDate)}</td>
                             <td>{(t.paymentMode || '').replace(/_/g, ' ')}</td>
-                            <td className="text-right tabular-nums">{RM(t.total)}</td>
+                            <td className={`text-right tabular-nums ${t.status === 'CANCELLED' ? 'line-through text-ink-400' : ''}`}>{RM(t.total)}</td>
+                            <td>{t.status === 'CANCELLED' ? <span className="chip-cancelled">Cancelled</span> : <span className="chip-paid">Paid</span>}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                </div>
+              )}
+              {bk.status === 'CANCELLED' && bk.cancelNote && (
+                <div className="border border-kumkum-300/60 bg-kumkum-50 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-kumkum-700 uppercase tracking-wide mb-2">Cancellation reason</p>
+                  <p className="text-sm text-ink-900 whitespace-pre-wrap">{bk.cancelNote.note}</p>
+                  <p className="text-xs text-ink-500 mt-2">
+                    {bk.cancelNote.cancelledBy?.name} · {fmtDT(bk.cancelNote.createdAt)}
+                  </p>
                 </div>
               )}
               <div>
@@ -822,10 +833,23 @@ export default function Dashboard() {
         title="Cancel booking"
         message={`Cancel booking ${cancelling?.bookingNo} for ${cancelling?.devotee?.name}? This cannot be undone.`}
         onConfirm={cancelBooking}
-        onClose={() => setCancelling(null)}
+        onClose={() => { setCancelling(null); setCancelNote(''); }}
         busy={cancelBusy}
         confirmLabel="Cancel booking"
-      />
+        confirmDisabled={!cancelNote.trim()}
+      >
+        <div>
+          <label className="label">Reason for cancellation <span className="text-kumkum-600">*</span></label>
+          <textarea
+            className="input resize-none"
+            rows={3}
+            placeholder="Why is this booking being cancelled?"
+            value={cancelNote}
+            autoFocus
+            onChange={(e) => setCancelNote(e.target.value)}
+          />
+        </div>
+      </ConfirmModal>
 
       <SendMessageModal
         open={!!messaging}

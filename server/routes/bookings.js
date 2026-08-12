@@ -1,12 +1,23 @@
 ﻿import { Router } from 'express';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { Op, fn, col } from 'sequelize';
-import { HallBooking, Devotee, Transaction, TransactionItem, BookingNote, Reminder, LookupValue, Setting, User } from '../db.js';
+import { sequelize, HallBooking, Devotee, Transaction, TransactionItem, BookingNote, BookingCancelNote, Reminder, LookupValue, Setting, User } from '../db.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 import { can } from '../middleware/can.js';
 import { audit } from '../middleware/audit.js';
 import { nextBookingNo } from '../utils/receiptNo.js';
 import { createTransaction } from './transactions.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const cancelLogFile = path.join(__dirname, '..', 'server.log');
+function cancelLog(msg) {
+  const line = `[${new Date().toISOString()}] [CANCEL-ROUTE] ${msg}\n`;
+  process.stdout.write(line);
+  try { fs.appendFileSync(cancelLogFile, line); } catch {}
+}
 
 const r = Router();
 r.use(requireAuth);
@@ -193,8 +204,9 @@ r.get('/:id', can('bookings', 'view'), async (req, res, next) => {
     const booking = await HallBooking.findByPk(id, {
       include: [
         { model: Devotee, as: 'devotee' },
-        { model: Transaction, as: 'transactions', where: { status: 'PAID' }, required: false, include: [{ model: TransactionItem, as: 'items' }], order: [['txDate', 'ASC']] },
+        { model: Transaction, as: 'transactions', required: false, include: [{ model: TransactionItem, as: 'items' }], order: [['txDate', 'ASC']] },
         { model: BookingNote, as: 'bookingNotes', include: [{ model: User, as: 'createdBy', attributes: ['name'] }], order: [['createdAt', 'DESC']] },
+        { model: BookingCancelNote, as: 'cancelNote', include: [{ model: User, as: 'cancelledBy', attributes: ['name'] }] },
       ],
     });
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
@@ -239,14 +251,64 @@ r.delete('/:id/booking-notes/:noteId', can('bookings', 'edit'), async (req, res,
   } catch (e) { next(e); }
 });
 
-r.patch('/:id/cancel', can('bookings', 'delete'), async (req, res, next) => {
+r.post('/:id/cancel', (req, res, next) => {
+  cancelLog(`HIT ${req.method} ${req.originalUrl} origin=${req.headers.origin || '-'} auth=${req.headers.authorization ? 'present' : 'missing'} ip=${req.ip}`);
+  res.on('finish', () => cancelLog(`DONE id=${req.params.id} status=${res.statusCode}`));
+  next();
+}, can('bookings', 'delete'), async (req, res, next) => {
+  let responded = false;
+  const watchdog = setTimeout(() => {
+    if (responded || res.headersSent) return;
+    responded = true;
+    cancelLog(`TIMEOUT booking id=${req.params.id} - handler still running after 8s, likely DB lock/pool stall`);
+    res.status(504).json({ error: 'Cancel request timed out — please check the booking status and retry' });
+  }, 8000);
+
   try {
     const id = Number(req.params.id);
-    await HallBooking.update({ status: 'CANCELLED' }, { where: { id } });
+    const note = (req.body?.note || '').trim();
+    cancelLog(`processing booking id=${id} user=${req.user?.id}`);
+
+    if (!note) {
+      clearTimeout(watchdog);
+      if (responded) return;
+      responded = true;
+      return res.status(400).json({ error: 'Cancellation note is required' });
+    }
+    const existing = await HallBooking.findByPk(id);
+    if (!existing) {
+      clearTimeout(watchdog);
+      if (responded) return;
+      responded = true;
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+    if (existing.status === 'CANCELLED') {
+      clearTimeout(watchdog);
+      if (responded) return;
+      responded = true;
+      return res.status(400).json({ error: 'Booking is already cancelled' });
+    }
+
+    const before = existing.toJSON();
+    await sequelize.transaction(async (t) => {
+      await HallBooking.update({ status: 'CANCELLED' }, { where: { id }, transaction: t });
+      await Transaction.update({ status: 'CANCELLED' }, { where: { bookingId: id, status: 'PAID' }, transaction: t });
+      await BookingCancelNote.create({ bookingId: id, note, cancelledById: req.user.id, createdAt: new Date() }, { transaction: t });
+    });
     const booking = await HallBooking.findByPk(id);
-    await audit(req, 'CANCEL', 'HallBooking', id, null, booking?.toJSON());
+    await audit(req, 'CANCEL', 'HallBooking', id, before, { ...booking?.toJSON(), cancelNote: note });
+    clearTimeout(watchdog);
+    if (responded) return;
+    responded = true;
+    cancelLog(`success booking id=${id}`);
     res.json(booking);
-  } catch (e) { next(e); }
+  } catch (e) {
+    clearTimeout(watchdog);
+    cancelLog(`ERROR booking id=${req.params.id}: ${e.stack || e.message}`);
+    if (responded) return;
+    responded = true;
+    next(e);
+  }
 });
 
 export default r;
