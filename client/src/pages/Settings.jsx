@@ -10,9 +10,14 @@ import { Toast, useToast } from '../components/Toast.jsx';
 const TABS = [
   { key: 'profile',   label: 'Temple Profile & Logo' },
   { key: 'receipt',   label: 'Receipt / Chit' },
-  { key: 'qr',        label: 'Payment QR' },
+  { key: 'payment',   label: 'Payment Config' },
   { key: 'numbering', label: 'Numbering' },
   { key: 'templates', label: 'Message Templates' },
+];
+
+const PAYMENT_TABS = [
+  { key: 'qr',   label: 'Payment QR' },
+  { key: 'bank', label: 'Bank Information' },
 ];
 
 const DUMMY = {
@@ -92,6 +97,7 @@ function TemplateEditor({ tpl, onSave, onCancel }) {
 export default function Settings() {
   const { settings, refreshMasterData, can, online } = useApp();
   const [tab, setTab] = useState('profile');
+  const [paymentSubTab, setPaymentSubTab] = useState('qr');
   const [form, setForm] = useState({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -247,10 +253,26 @@ export default function Settings() {
         </div>
       )}
 
-      {tab === 'qr' && (
-        <div className="max-w-md">
-          <p className="text-sm text-ink-600 mb-3">Upload your bank's DuitNow QR. It appears full-screen on the counter when the devotee chooses "DuitNow QR".</p>
-          <Dropzone url={settings['qr.imageUrl']} label="Tap to upload DuitNow QR image" onPick={(f) => { if (guardOffline()) return; upload('/settings/qr-image', 'qr', f); }} />
+      {tab === 'payment' && (
+        <div>
+          <Tabs tabs={PAYMENT_TABS} active={paymentSubTab} onChange={setPaymentSubTab} className="mb-4" />
+
+          {paymentSubTab === 'qr' && (
+            <div className="max-w-md">
+              <p className="text-sm text-ink-600 mb-3">Upload your bank's DuitNow QR. It appears full-screen on the counter when the devotee chooses "DuitNow QR".</p>
+              <Dropzone url={settings['qr.imageUrl']} label="Tap to upload DuitNow QR image" onPick={(f) => { if (guardOffline()) return; upload('/settings/qr-image', 'qr', f); }} />
+            </div>
+          )}
+
+          {paymentSubTab === 'bank' && (
+            <div className="card p-5 space-y-3 max-w-xl">
+              <p className="text-sm text-ink-600 mb-1">Shown on hall booking invoices alongside the payment QR.</p>
+              <div><label className="label">Bank name</label><input className="input" placeholder="Enter your bank name" disabled={!editable} value={form['bank.name'] || ''} onChange={(e) => set('bank.name', e.target.value)} /></div>
+              <div><label className="label">Bank account no</label><input className="input" placeholder="Enter your bank account no" disabled={!editable} value={form['bank.accountNo'] || ''} onChange={(e) => set('bank.accountNo', e.target.value)} /></div>
+              <div><label className="label">Account owner name</label><input className="input" placeholder="Enter your account owner name" disabled={!editable} value={form['bank.accountOwnerName'] || ''} onChange={(e) => set('bank.accountOwnerName', e.target.value)} /></div>
+              {editable && <button className="btn-primary" disabled={busy} onClick={() => { if (guardOffline()) return; save(); }}><Save size={15} /> {busy ? 'Saving…' : 'Save bank information'}</button>}
+            </div>
+          )}
         </div>
       )}
 

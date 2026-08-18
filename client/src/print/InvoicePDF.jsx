@@ -18,12 +18,13 @@ const s = StyleSheet.create({
   // ── Header ──
   hdr: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '10mm', borderBottomWidth: 2, borderBottomColor: M, marginBottom: '6mm' },
   logo: { width: 56, height: 56, borderRadius: 28, marginRight: 10 },
-  tBlock: { flexDirection: 'row', alignItems: 'flex-start' },
+  tBlock: { flexDirection: 'row', alignItems: 'flex-start', flexShrink: 1, maxWidth: '65%' },
+  tTextWrap: { flexShrink: 1, flexGrow: 1 },
   tName: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: M, marginBottom: 2 },
   tSub: { fontSize: 9, color: M, marginBottom: 3 },
   tSubTa: { fontSize: 9, fontFamily: 'NotoSansTamil', color: M, marginBottom: 3 },
   tInfo: { fontSize: 8, color: '#666666', lineHeight: 1.7 },
-  iBlock: { alignItems: 'flex-end' },
+  iBlock: { alignItems: 'flex-end', flexShrink: 0 },
   iLabel: { fontSize: 22, fontFamily: 'Helvetica-Bold', color: M, letterSpacing: 3, marginBottom: 4 },
   iNum: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#333333', marginBottom: 5 },
   iMetaRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 2 },
@@ -61,7 +62,7 @@ const s = StyleSheet.create({
   totRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 7, paddingBottom: 7, paddingLeft: 12, paddingRight: 12, fontSize: 9, borderBottomWidth: 1, borderBottomColor: LB },
   totPaid: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 7, paddingBottom: 7, paddingLeft: 12, paddingRight: 12, fontSize: 9, color: GR, borderBottomWidth: 1, borderBottomColor: LB },
   totBal: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 10, paddingBottom: 10, paddingLeft: 12, paddingRight: 12, backgroundColor: M, borderRadius: 3 },
-  totBalTxt: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: '#ffffff' },
+  totBalTxt: { fontSize: 9.5, fontFamily: 'Helvetica-Bold', color: '#ffffff' },
 
   // ── Payment history ──
   secTitle: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: M, marginBottom: '2mm', marginTop: '1mm' },
@@ -69,12 +70,19 @@ const s = StyleSheet.create({
   pHCell: { fontSize: 8.5, fontFamily: 'Helvetica-Bold', color: M },
   pRow: { flexDirection: 'row', paddingTop: 7, paddingBottom: 7, paddingLeft: 10, paddingRight: 10, borderBottomWidth: 1, borderBottomColor: LB, fontSize: 9 },
 
+  // ── Bank info / QR ──
+  payRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: '6mm' },
+  payBankBox: { flex: 1, padding: 11, borderWidth: 1, borderColor: BD, borderRadius: 3, marginRight: 8 },
+  payQrBox: { width: '32mm', alignItems: 'center', marginLeft: 'auto' },
+  qrImg: { width: '30mm', height: '30mm', borderWidth: 1, borderColor: BD, borderRadius: 3 },
+  qrCaption: { fontSize: 7, color: '#888888', marginTop: 3, textAlign: 'center' },
+
   // ── Footer ──
   footer: { position: 'absolute', bottom: '12mm', left: '18mm', right: '18mm', borderTopWidth: 1.5, borderTopColor: BD, paddingTop: '4mm', flexDirection: 'row', justifyContent: 'space-between' },
   ftTerms: { flex: 1, fontSize: 8, color: '#555555', lineHeight: 1.6 },
   ftTitle: { fontSize: 8.5, fontFamily: 'Helvetica-Bold', color: '#333333', marginBottom: 3 },
   sigLine: { borderTopWidth: 1, borderTopColor: '#aaaaaa', paddingTop: 4, fontSize: 7.5, color: '#666666', textAlign: 'center', marginTop: 44, width: 150 },
-  wm: { fontSize: 7.5, color: G, textAlign: 'center', marginTop: 4 },
+  wm: { fontSize: 7.5, color: G, textAlign: 'center', marginTop: 4, width: 150 },
 });
 
 const RM = (n) => `RM ${Number(n || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -95,6 +103,12 @@ function InvoicePDF({ booking, settings, eventTypeName }) {
     ? (rawLogo.startsWith('http') ? rawLogo : `${window.location.origin}${rawLogo}`)
     : null;
 
+  const rawQr = cfg['qr.imageUrl'];
+  const qrSrc = rawQr
+    ? (rawQr.startsWith('http') ? rawQr : `${window.location.origin}${rawQr}`)
+    : null;
+  const hasBankInfo = cfg['bank.name'] || cfg['bank.accountNo'] || cfg['bank.accountOwnerName'];
+
   return (
     <Document title={`Invoice ${booking.bookingNo}`} author={templeName}>
       <Page size="A4" style={s.page}>
@@ -103,7 +117,7 @@ function InvoicePDF({ booking, settings, eventTypeName }) {
         <View style={s.hdr}>
           <View style={s.tBlock}>
             {logoSrc && <Image src={logoSrc} style={s.logo} />}
-            <View>
+            <View style={s.tTextWrap}>
               <Text style={s.tName}>{templeName}</Text>
               {showTa && <Text style={s.tSubTa}>{templeNameTa}</Text>}
               {cfg['temple.address'] && <Text style={s.tInfo}>{cfg['temple.address']}</Text>}
@@ -132,7 +146,7 @@ function InvoicePDF({ booking, settings, eventTypeName }) {
             {d?.altPhone && <View style={s.row}><Text style={s.lbl}>Alt Phone</Text><Text style={s.val}>{d.altPhone}</Text></View>}
             {d?.icNumber && <View style={s.row}><Text style={s.lbl}>IC / ID</Text><Text style={s.val}>{d.icNumber}</Text></View>}
             {d?.email    && <View style={s.row}><Text style={s.lbl}>Email</Text><Text style={s.val}>{d.email}</Text></View>}
-            {d?.address  && <View style={s.row}><Text style={s.lbl}>Address</Text><Text style={s.val}>{d.address}</Text></View>}
+            <View style={s.row}><Text style={s.lbl}>Address</Text><Text style={s.val}>{d?.address?.trim() && d.address.trim().toLowerCase() !== 'nil' ? d.address : '-'}</Text></View>
           </View>
           <View style={s.box}>
             <Text style={s.boxTitle}>BOOKING DETAILS</Text>
@@ -205,13 +219,33 @@ function InvoicePDF({ booking, settings, eventTypeName }) {
           </View>
         )}
 
+        {/* ── BANK INFO / QR ── */}
+        {(hasBankInfo || qrSrc) && (
+          <View style={s.payRow}>
+            {hasBankInfo && (
+              <View style={s.payBankBox}>
+                <Text style={s.boxTitle}>BANK INFORMATION</Text>
+                {cfg['bank.name'] && <View style={s.row}><Text style={s.lbl}>Bank Name</Text><Text style={s.val}>{cfg['bank.name']}</Text></View>}
+                {cfg['bank.accountNo'] && <View style={s.row}><Text style={s.lbl}>Account No</Text><Text style={s.val}>{cfg['bank.accountNo']}</Text></View>}
+                {cfg['bank.accountOwnerName'] && <View style={s.row}><Text style={s.lbl}>Account Name</Text><Text style={s.val}>{cfg['bank.accountOwnerName']}</Text></View>}
+              </View>
+            )}
+            {qrSrc && (
+              <View style={s.payQrBox}>
+                <Image src={qrSrc} style={s.qrImg} />
+                <Text style={s.qrCaption}>Scan to pay</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* ── FOOTER ── */}
         <View style={s.footer}>
           <View style={s.ftTerms}>
             <Text style={s.ftTitle}>Payment Terms</Text>
             <Text>Full payment is required on or before the event date.</Text>
             <Text>This invoice serves as an official receipt upon full settlement.</Text>
-            {cfg['receipt.footerText'] && <Text style={{ marginTop: 5, color: '#888888', fontSize: 7.5 }}>{cfg['receipt.footerText']}</Text>}
+            {cfg['receipt.footerText'] && <Text style={{ marginTop: 5, color: '#888888', fontSize: 7.5, fontFamily: 'NotoSansTamil' }}>{cfg['receipt.footerText']}</Text>}
           </View>
           <View>
             <Text style={s.sigLine}>Authorised Signature &amp; Stamp</Text>

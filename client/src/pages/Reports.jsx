@@ -112,6 +112,22 @@ export default function Reports() {
     ...(lookups.BOOKING_PAYMENT_MODE?.values || []),
   ].filter((v, i, a) => a.findIndex((x) => (x.meta?.code || x.nameEn) === (v.meta?.code || v.nameEn)) === i);
 
+  // POS categories created in Temple Config (isPosMenu=true) — these drive transaction `kind`
+  const posCategories = Object.entries(lookups)
+    .filter(([, t]) => t.isPosMenu)
+    .map(([code, t]) => ({ code, ...t }))
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name));
+
+  const kindLabels = {
+    ...KIND_LABELS,
+    ...Object.fromEntries(posCategories.map((c) => [c.code, c.name])),
+  };
+
+  const kindOptions = [
+    ...posCategories.map((c) => ({ value: c.code, label: c.name })),
+    { value: 'HALL_PAYMENT', label: 'Hall Payment' },
+  ].filter((v, i, a) => a.findIndex((x) => x.value === v.value) === i);
+
   const load = useCallback(() => {
     setErr(''); setLoading(true);
     const effectiveSortBy = sortBy || DEFAULT_SORT[tab] || 'txDate';
@@ -133,7 +149,7 @@ export default function Reports() {
     'daily-collection': [
       { key: 'dateFrom', label: 'From', type: 'date' },
       { key: 'dateTo', label: 'To', type: 'date' },
-      { key: 'kind', label: 'Type', type: 'select', options: Object.entries(KIND_LABELS).map(([v, l]) => ({ value: v, label: l })) },
+      { key: 'kind', label: 'Type', type: 'select', options: kindOptions },
       { key: 'paymentMode', label: 'Payment mode', type: 'select', options: payModes.map((m) => ({ value: m.meta?.code || m.nameEn.toUpperCase().replace(/ /g, '_'), label: m.nameEn })) },
       { key: 'status', label: 'Status', type: 'select', options: [{ value: 'PAID', label: 'Paid' }, { value: 'CANCELLED', label: 'Cancelled' }] },
       { key: 'search', label: 'Search', type: 'search', placeholder: 'Receipt no / name' },
@@ -170,7 +186,7 @@ export default function Reports() {
   const txColumns = [
     { key: 'receiptNo', label: 'Receipt', flex: 1, sortable: true, render: (t) => <span className="font-semibold text-maroon-900">{t.receiptNo}</span>, csv: (t) => t.receiptNo },
     { key: 'txDate', label: 'Date & Time', flex: 1.4, sortable: true, render: (t) => new Date(t.txDate).toLocaleString('en-MY'), csv: (t) => new Date(t.txDate).toLocaleString('en-MY') },
-    { key: 'kind', label: 'Type', flex: 1, render: (t) => KIND_LABELS[t.kind] || t.kind, csv: (t) => t.kind },
+    { key: 'kind', label: 'Type', flex: 1, render: (t) => kindLabels[t.kind] || t.kind, csv: (t) => t.kind },
     { key: 'devoteeName', label: 'Devotee', flex: 1.2, sortable: true, render: (t) => t.devoteeName || t.devotee?.name || '—', csv: (t) => t.devoteeName || t.devotee?.name || '' },
     { key: 'items', label: 'Items', flex: 2.5, render: (t) => {
       const items = t.items ?? [];
@@ -262,7 +278,7 @@ export default function Reports() {
 
       const byKindRows = (data.byKind || []).map((g) => ({
         key: g.kind,
-        label: KIND_LABELS[g.kind] || g.kind,
+        label: kindLabels[g.kind] || g.kind,
         count: g._count._all,
         value: Number(g._sum.total || 0),
       })).sort((a, b) => b.value - a.value);

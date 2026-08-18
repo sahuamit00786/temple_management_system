@@ -832,7 +832,7 @@ export default function Bookings() {
                   {dev.altPhone && <Row2 label="Alt phone" value={dev.altPhone} />}
                   {dev.icNumber && <Row2 label="IC / Passport" value={dev.icNumber} />}
                   {dev.email && <Row2 label="Email" value={dev.email} />}
-                  {dev.address && <Row2 label="Address" value={dev.address} />}
+                  <Row2 label="Address" value={dev.address?.trim() && dev.address.trim().toLowerCase() !== 'nil' ? dev.address : '-'} />
                 </div>
               </div>
 
