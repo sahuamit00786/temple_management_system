@@ -1,4 +1,5 @@
 import { Document, Page, View, Text, Image, StyleSheet, pdf, Font } from '@react-pdf/renderer';
+import API_HOST from '../config.js';
 
 Font.register({
   family: 'NotoSansTamil',
@@ -100,12 +101,12 @@ function InvoicePDF({ booking, settings, eventTypeName }) {
 
   const rawLogo = cfg['temple.logoUrl'];
   const logoSrc = rawLogo
-    ? (rawLogo.startsWith('http') ? rawLogo : `${window.location.origin}${rawLogo}`)
+    ? (rawLogo.startsWith('http') ? rawLogo : `${API_HOST}${rawLogo}`)
     : null;
 
   const rawQr = cfg['qr.imageUrl'];
   const qrSrc = rawQr
-    ? (rawQr.startsWith('http') ? rawQr : `${window.location.origin}${rawQr}`)
+    ? (rawQr.startsWith('http') ? rawQr : `${API_HOST}${rawQr}`)
     : null;
   const hasBankInfo = cfg['bank.name'] || cfg['bank.accountNo'] || cfg['bank.accountOwnerName'];
 

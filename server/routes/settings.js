@@ -1,6 +1,7 @@
 ﻿import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { Op } from 'sequelize';
 import { Setting } from '../db.js';
@@ -89,6 +90,19 @@ r.post('/qr-image', can('settings', 'edit'), upload.single('qr'), async (req, re
     const url = `/uploads/${req.file.filename}`;
     await Setting.upsert({ key: 'qr.imageUrl', value: url });
     res.json({ url });
+  } catch (e) { next(e); }
+});
+
+r.delete('/qr-image', can('settings', 'edit'), async (req, res, next) => {
+  try {
+    const row = await Setting.findByPk('qr.imageUrl');
+    if (row?.value) {
+      const filePath = path.join(uploadDir, path.basename(row.value));
+      fs.unlink(filePath, () => {});
+    }
+    await Setting.destroy({ where: { key: 'qr.imageUrl' } });
+    await audit(req, 'DELETE', 'Setting', 'qr.imageUrl', row?.value, null);
+    res.json({ ok: true });
   } catch (e) { next(e); }
 });
 

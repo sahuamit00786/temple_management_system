@@ -196,6 +196,17 @@ export default function Settings() {
     finally { setBusy(false); }
   };
 
+  const removeQr = async () => {
+    if (!window.confirm('Delete the payment QR image?')) return;
+    setBusy(true); setErr('');
+    try {
+      await api('/settings/qr-image', { method: 'DELETE' });
+      await refreshMasterData();
+      setMsg('QR image deleted'); setTimeout(() => setMsg(''), 3000);
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  };
+
   const Dropzone = ({ url, label, onPick }) => (
     <label className={`card flex flex-col items-center justify-center gap-2 p-6 transition ${editable ? 'cursor-pointer hover:shadow-glow' : 'opacity-60 cursor-not-allowed'}`}>
       {url
@@ -261,6 +272,11 @@ export default function Settings() {
             <div className="max-w-md">
               <p className="text-sm text-ink-600 mb-3">Upload your bank's DuitNow QR. It appears full-screen on the counter when the devotee chooses "DuitNow QR".</p>
               <Dropzone url={settings['qr.imageUrl']} label="Tap to upload DuitNow QR image" onPick={(f) => { if (guardOffline()) return; upload('/settings/qr-image', 'qr', f); }} />
+              {editable && settings['qr.imageUrl'] && (
+                <button className="btn-ghost !text-kumkum-600 mt-2 flex items-center gap-1" disabled={busy} onClick={() => { if (guardOffline()) return; removeQr(); }}>
+                  <Trash2 size={14} /> Delete QR image
+                </button>
+              )}
             </div>
           )}
 
