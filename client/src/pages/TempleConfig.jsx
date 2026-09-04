@@ -403,14 +403,6 @@ export default function TempleConfig() {
                       </span>
                     )}
                     <button
-                      className="btn-ghost !py-1.5 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
-                      disabled={!online}
-                      title={!online ? 'Connect to server to add items' : 'Add a group header'}
-                      onClick={() => setEditing({ nameEn: '', nameTa: '', price: '', parentId: null, isGroup: true })}
-                    >
-                      <FolderOpen size={15} /> Add group
-                    </button>
-                    <button
                       className="btn-outline disabled:opacity-40 disabled:cursor-not-allowed"
                       disabled={!online}
                       title={!online ? 'Connect to server to add items' : ''}
@@ -514,8 +506,8 @@ export default function TempleConfig() {
               />
             </div>
 
-            {/* Group selector: shown when adding/editing a non-group item and groups exist */}
-            {!editing.isGroup && !editing.parentId && hasParents && (
+            {/* Group selector hidden per config — Add group button removed too */}
+            {false && !editing.isGroup && !editing.parentId && hasParents && (
               <div>
                 <label className="label">Assign to group <span className="text-ink-400 font-normal">(optional)</span></label>
                 <select

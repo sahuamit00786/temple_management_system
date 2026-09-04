@@ -516,3 +516,13 @@ SequelizeConnectionError: connect ETIMEDOUT
 [2026-08-18T05:19:03.844Z] [INFO] PORT → 2083
 [2026-08-18T05:19:04.825Z] [INFO] ✅ Database connected
 [2026-08-18T05:19:04.834Z] [INFO] ✅ Server running → http://localhost:2083/
+[2026-09-04T03:45:37.293Z] [INFO] === TMADJ SERVER STARTING ===
+[2026-09-04T03:45:37.295Z] [INFO] DB  → 187.127.159.160:3306 / caauto_temple_test_db
+[2026-09-04T03:45:37.295Z] [INFO] PORT → 2083
+[2026-09-04T03:45:38.638Z] [INFO] ✅ Database connected
+[2026-09-04T03:45:38.642Z] [INFO] ✅ Server running → http://localhost:2083/
+[2026-09-04T03:52:26.739Z] [INFO] === TMADJ SERVER STARTING ===
+[2026-09-04T03:52:26.740Z] [INFO] DB  → 187.127.159.160:3306 / caauto_temple_test_db
+[2026-09-04T03:52:26.741Z] [INFO] PORT → 2083
+[2026-09-04T03:52:27.200Z] [INFO] ✅ Database connected
+[2026-09-04T03:52:27.203Z] [INFO] ✅ Server running → http://localhost:2083/

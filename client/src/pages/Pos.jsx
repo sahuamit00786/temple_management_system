@@ -99,6 +99,8 @@ export default function Pos() {
   const [viewing, setViewing] = useState(null);
   const [chitHtml, setChitHtml] = useState(null);
   const chitIframeRef = useRef(null);
+  const mobileChitIframeRef = useRef(null);
+  const [cartPreviewOpen, setCartPreviewOpen] = useState(false);
   const [prefillSource, setPrefillSource] = useState(null);
   const [receiptPrefix, setReceiptPrefix] = useState(localStorage.getItem('tmadj.receiptPrefix') || 'ORD');
   const [receiptDigits, setReceiptDigits] = useState(Number(localStorage.getItem('tmadj.receiptDigits') || 6));
@@ -230,6 +232,20 @@ export default function Pos() {
 
 const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
 
+  const livePreviewChit = {
+    receiptNo: null,
+    localChitNo: previewChitNo,
+    items: cart,
+    total,
+    tendered: Number(tendered) || total,
+    paymentMode: lastPayMode || 'CASH',
+    deviceId: localStorage.getItem('tmadj.deviceId') || 'C1',
+    txDate: new Date().toISOString(),
+    devoteeName: devoteeName || null,
+    createdByName: user?.name,
+    createdByRole: user?.role,
+  };
+
   // Derive kind from cart items (majority or first)
   const inferKind = () => {
     if (!cart.length) return 'ARCHANAI';
@@ -307,7 +323,23 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
 
   return (
     <div>
-      <Tabs tabs={can('pos', 'create') ? POS_TABS : POS_TABS.filter((t) => t.key === 'orders')} active={posTab} onChange={setPosTab} />
+      <div className="flex items-center justify-between mb-1">
+        <Tabs tabs={can('pos', 'create') ? POS_TABS : POS_TABS.filter((t) => t.key === 'orders')} active={posTab} onChange={setPosTab} />
+        {posTab === 'create' && (
+          <button
+            className="btn-ghost !p-2 lg:hidden relative"
+            title="View chit"
+            onClick={() => setCartPreviewOpen(true)}
+          >
+            <Receipt size={16} />
+            {totalQty > 0 && (
+              <span className="absolute -top-1 -right-1 bg-maroon-900 text-cream-50 text-[10px] leading-none rounded-full min-w-[15px] h-[15px] flex items-center justify-center px-0.5">
+                {totalQty}
+              </span>
+            )}
+          </button>
+        )}
+      </div>
 
       {posTab === 'orders' && (
         <div>
@@ -559,22 +591,7 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
               />
 
               <div className="bg-white rounded shadow-md overflow-hidden">
-                <ChitContent
-                  chit={{
-                    receiptNo: null,
-                    localChitNo: previewChitNo,
-                    items: cart,
-                    total,
-                    tendered: Number(tendered) || total,
-                    paymentMode: lastPayMode || 'CASH',
-                    deviceId: localStorage.getItem('tmadj.deviceId') || 'C1',
-                    txDate: new Date().toISOString(),
-                    devoteeName: devoteeName || null,
-                    createdByName: user?.name,
-                    createdByRole: user?.role,
-                  }}
-                  settings={settings}
-                />
+                <ChitContent chit={livePreviewChit} settings={settings} />
               </div>
 
               {can('pos', 'create') && (
@@ -634,6 +651,40 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
             : <p className="text-sm text-ink-600 py-10">Upload your DuitNow QR in Settings → Payment QR to show it here.</p>}
           <button className="btn-primary w-full justify-center" onClick={() => completeSale('DUITNOW_QR')}>
             Confirm payment received
+          </button>
+        </div>
+      </Modal>
+
+      {/* Mobile live chit preview (right panel is desktop-only) */}
+      <Modal title="Order Chit" open={cartPreviewOpen} onClose={() => setCartPreviewOpen(false)}>
+        <div className="flex flex-col gap-3">
+          <div className="bg-gray-100 rounded p-3 flex justify-center">
+            <iframe
+              ref={mobileChitIframeRef}
+              srcDoc={buildChitHtml(livePreviewChit, settings)}
+              title="Chit"
+              scrolling="no"
+              onLoad={(e) => {
+                const doc = e.target.contentDocument;
+                if (doc) e.target.style.height = `${doc.documentElement.scrollHeight}px`;
+              }}
+              style={{ width: '310px', minHeight: '120mm', border: 'none', background: '#fff', display: 'block', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', borderRadius: '4px' }}
+            />
+          </div>
+          <button
+            className="btn-primary w-full justify-center"
+            disabled={!cart.length}
+            onClick={() => {
+              const deviceId = getDeviceId(settings);
+              const handleAfterPrint = () => {
+                savePrinterPreference(deviceId, 'user-selected');
+                window.removeEventListener('afterprint', handleAfterPrint);
+              };
+              window.addEventListener('afterprint', handleAfterPrint);
+              mobileChitIframeRef.current?.contentWindow?.print();
+            }}
+          >
+            <Printer size={15} /> Print
           </button>
         </div>
       </Modal>

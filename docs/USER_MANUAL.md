@@ -15,6 +15,8 @@ This app helps temple staff:
 
 It works on a computer, tablet, or phone browser. On the counter machine you'll usually use it full-screen next to a receipt printer.
 
+**One-time counter setup — silent printing (no print popup):** By default, printing a chit shows the browser's print dialog every time. This can be eliminated with a one-time setup on the counter PC — no extra software installed. See [SETUP.md](SETUP.md) for exact steps.
+
 ---
 
 ## 2. Logging in
