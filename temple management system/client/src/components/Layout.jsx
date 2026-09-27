@@ -76,7 +76,7 @@ export default function Layout() {
           {!collapsed && (
             <div className="flex items-center gap-2">
               <img src="/icons/diya.svg" alt="" className="w-5 h-5 opacity-80" />
-              <span className="text-[11px] text-gold-300 tracking-widest">v1.0</span>
+              <span className="text-[11px] text-gold-300 tracking-widest">v1.1</span>
             </div>
           )}
           <button

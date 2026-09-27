@@ -238,6 +238,13 @@ export default function TempleConfig() {
     finally { setBusy(false); }
   };
 
+  const toggleCategoryActive = async (cat) => {
+    try {
+      await api(`/lookups/types/${cat.id}`, { method: 'PUT', body: { isActive: cat.isActive === false } });
+      await Promise.all([load(), refreshMasterData()]);
+    } catch (e) { flash(e.message); }
+  };
+
   // ── Reorder ─────────────────────────────────────────────────────────────────
 
   const handleCatDrop = async (targetId) => {
@@ -339,7 +346,8 @@ export default function TempleConfig() {
           {/* ── Category tabs ───────────────────────────────────────────────────── */}
           <div className="flex flex-wrap gap-1.5 mb-4">
             {categories.map((cat) => {
-              const isActive = tab === cat.code;
+              const isSelected = tab === cat.code;
+              const isHidden = cat.isActive === false;
               const isDraggingThis = draggingCat === cat.id;
               const isDropTarget = dragOverCat === cat.id && draggingCat !== cat.id;
               return (
@@ -352,19 +360,28 @@ export default function TempleConfig() {
                   onDrop={(e) => { e.preventDefault(); handleCatDrop(cat.id); }}
                   onClick={() => setTab(cat.code)}
                   className={`group flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-sm font-medium cursor-pointer select-none transition-all ${
-                    isActive
+                    isSelected
                       ? 'bg-maroon-900 border-maroon-900 text-white shadow-md'
                       : 'bg-white border-gold-300/70 text-ink-700 hover:border-maroon-300 hover:text-maroon-900 hover:shadow-sm'
-                  } ${isDraggingThis ? 'opacity-40 scale-95' : ''} ${isDropTarget ? 'ring-2 ring-saffron-400 ring-offset-1 scale-105' : ''}`}
+                  } ${isDraggingThis ? 'opacity-40 scale-95' : ''} ${isDropTarget ? 'ring-2 ring-saffron-400 ring-offset-1 scale-105' : ''} ${isHidden ? 'opacity-50 italic' : ''}`}
                 >
                   {can('temple-config', 'edit') && (
-                    <GripVertical size={13} className={`shrink-0 cursor-grab active:cursor-grabbing ${isActive ? 'text-white/50' : 'text-ink-300'}`} />
+                    <GripVertical size={13} className={`shrink-0 cursor-grab active:cursor-grabbing ${isSelected ? 'text-white/50' : 'text-ink-300'}`} />
                   )}
                   <span>{cat.name}</span>
-                  <span className={`flex items-center gap-0.5 ml-0.5 transition-opacity ${isActive ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'}`}>
+                  <span className={`flex items-center gap-0.5 ml-0.5 transition-opacity ${isSelected ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'}`}>
                     {can('temple-config', 'edit') && (
                       <button
-                        className={`p-0.5 rounded hover:bg-white/20 ${isActive ? 'text-white/70 hover:text-white' : 'text-ink-400 hover:text-maroon-700'}`}
+                        className={`p-0.5 rounded hover:bg-white/20 ${isSelected ? 'text-white/70 hover:text-white' : 'text-ink-400 hover:text-maroon-700'}`}
+                        title={isHidden ? 'Show in POS counter' : 'Hide from POS counter'}
+                        onClick={(e) => { e.stopPropagation(); toggleCategoryActive(cat); }}
+                      >
+                        {isHidden ? <Eye size={11} /> : <EyeOff size={11} />}
+                      </button>
+                    )}
+                    {can('temple-config', 'edit') && (
+                      <button
+                        className={`p-0.5 rounded hover:bg-white/20 ${isSelected ? 'text-white/70 hover:text-white' : 'text-ink-400 hover:text-maroon-700'}`}
                         title="Rename"
                         onClick={(e) => { e.stopPropagation(); setErr(''); setEditingCat({ id: cat.id, name: cat.name }); }}
                       >
@@ -373,7 +390,7 @@ export default function TempleConfig() {
                     )}
                     {can('temple-config', 'delete') && (
                       <button
-                        className={`p-0.5 rounded ${isActive ? 'text-white/70 hover:text-white hover:bg-white/20' : 'text-ink-400 hover:text-kumkum-600 hover:bg-kumkum-50'}`}
+                        className={`p-0.5 rounded ${isSelected ? 'text-white/70 hover:text-white hover:bg-white/20' : 'text-ink-400 hover:text-kumkum-600 hover:bg-kumkum-50'}`}
                         title="Delete"
                         onClick={(e) => { e.stopPropagation(); setErr(''); setDeletingCat(cat); }}
                       >

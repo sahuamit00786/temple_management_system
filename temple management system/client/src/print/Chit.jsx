@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 /* ── Label sets ─────────────────────────────────────────── */
@@ -53,10 +54,12 @@ function templeName(settings, lang) {
 ─────────────────────────────────────────────────────────── */
 
 /* ── BASE CSS (HTML print) ─────────────────────────────── */
-function baseStyle(lang) {
+function baseStyle(lang, paperWidth = '80') {
   const font = getFont(lang);
+  const mm   = paperWidth === '58' ? 58 : 80;
+  const pad  = paperWidth === '58' ? '2mm 3mm' : '2mm 5mm';
   return `
-  @page { size: 80mm auto; margin: 0; }
+  @page { size: ${mm}mm auto; margin: 0; }
   *, *::before, *::after { box-sizing: border-box; }
   html {
     width: 100%; margin: 0;
@@ -64,7 +67,7 @@ function baseStyle(lang) {
   body {
     font-family: ${font};
     font-size: 13px; line-height: 1.5; color: #000; font-weight: 600;
-    background: #fff; width: 80mm; margin: 0 auto; padding: 2mm 5mm;
+    background: #fff; width: ${mm}mm; margin: 0 auto; padding: ${pad};
     word-wrap: break-word; overflow-x: hidden;
     scrollbar-width: none;
   }
@@ -92,7 +95,8 @@ const WAVE = { border: 'none', borderTop: '2px solid #000',  margin: '5px 0', wi
 
 /* ── HTML string (window.print + All Orders preview) ──── */
 export function buildChitHtml(chit, settings) {
-  const lang     = settings['receipt.language'] || 'EN';
+  const lang       = settings['receipt.language'] || 'EN';
+  const paperWidth = settings['receipt.paperWidth'] === '58' ? '58' : '80';
   const lbl      = getLabels(lang);
   const total    = Number(chit.total);
   const tendered = Number(chit.tendered ?? total);
@@ -138,7 +142,7 @@ export function buildChitHtml(chit, settings) {
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 ${tamilFontImport}
-<style>${baseStyle(lang)}</style></head><body>
+<style>${baseStyle(lang, paperWidth)}</style></head><body>
 
 <div class="center">
   ${logoHtml}
@@ -320,6 +324,13 @@ export function ChitContent({ chit, settings }) {
 }
 
 export default function Chit({ chit, settings }) {
+  const paperWidth = settings?.['receipt.paperWidth'] === '58' ? '58' : '80';
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--chit-page-width', paperWidth === '58' ? '58mm' : '80mm');
+    document.documentElement.style.setProperty('--chit-content-width', paperWidth === '58' ? '54mm' : '76mm');
+  }, [paperWidth]);
+
   const portal = document.getElementById('chit-portal');
   if (!chit || !portal) return null;
   return createPortal(<ChitContent chit={chit} settings={settings} />, portal);

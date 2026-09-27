@@ -65,6 +65,7 @@ export const LookupType = sequelize.define('LookupType', {
   code: { type: DataTypes.STRING, allowNull: false, unique: true },
   name: { type: DataTypes.STRING, allowNull: false },
   isPosMenu: { type: DataTypes.BOOLEAN, defaultValue: false },
+  isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
   sortOrder: { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { tableName: 'lookuptype', timestamps: false });
 

@@ -48,6 +48,12 @@ export default function Payments() {
     ...(lookups.BOOKING_PAYMENT_MODE?.values || []),
   ].filter((v) => v.isActive).filter((v, i, a) => a.findIndex((x) => (x.meta?.code || x.nameEn) === (v.meta?.code || v.nameEn)) === i);
 
+  // Only 3 real transaction "types" exist: POS Order (any POS category/item),
+  // Hall Booking, and Membership. Any kind not explicitly HALL_PAYMENT/MEMBERSHIP
+  // is a POS category — always bucket it as "POS Order", never show its raw code.
+  const kindLabel = (k) => KIND_LABEL[k] || 'POS Order';
+  const kindChip = (k) => KIND_CHIP[k] || KIND_CHIP.ARCHANAI;
+
   const payModeOptions = payModes.length
     ? payModes.map((m) => ({ value: m.nameEn, label: m.nameEn }))
     : FALLBACK_PAY_MODES;
@@ -134,8 +140,8 @@ export default function Payments() {
     {
       key: 'kind', label: 'Type',
       render: (r) => (
-        <span className={`chip text-xs ${KIND_CHIP[r.kind] || 'bg-cream-100 text-ink-600'}`}>
-          {KIND_LABEL[r.kind] || r.kind}
+        <span className={`chip text-xs ${kindChip(r.kind)}`}>
+          {kindLabel(r.kind)}
         </span>
       ),
     },
@@ -244,8 +250,8 @@ export default function Payments() {
     {
       key: 'kind', label: 'Type',
       render: (t) => (
-        <span className={`chip text-xs ${KIND_CHIP[t.kind] || 'bg-cream-100 text-ink-600'}`}>
-          {KIND_LABEL[t.kind] || t.kind}
+        <span className={`chip text-xs ${kindChip(t.kind)}`}>
+          {kindLabel(t.kind)}
         </span>
       ),
     },

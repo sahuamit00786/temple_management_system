@@ -6,8 +6,6 @@ import { requireAuth } from '../middleware/authMiddleware.js';
 const r = Router();
 r.use(requireAuth);
 
-const ORDER_KINDS = ['ARCHANAI', 'DONATION', 'ANNADHANAM'];
-
 r.get('/summary', async (req, res, next) => {
   try {
     const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -66,7 +64,7 @@ r.get('/summary', async (req, res, next) => {
         totalToday: sum(todayTx),
         archanaiCount: byKind('ARCHANAI').length,
         donationsToday: sum(byKind('DONATION')),
-        ordersToday: todayTx.filter((t) => ORDER_KINDS.includes(t.kind)).length,
+        ordersToday: todayTx.filter((t) => t.kind !== 'HALL_PAYMENT').length,
         hallBookingsToday,
         totalMembers,
         upcomingBookings: upcoming,

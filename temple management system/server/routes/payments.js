@@ -7,15 +7,13 @@ import { can } from '../middleware/can.js';
 const r = Router();
 r.use(requireAuth);
 
-const ORDER_KINDS = ['ARCHANAI', 'DONATION', 'ANNADHANAM'];
-
 r.get('/', async (req, res, next) => {
   try {
     const { dateFrom, dateTo, type, paymentMode, status, search, page = 1, pageSize = 25, sortBy = 'txDate', sortOrder = 'desc' } = req.query;
 
     const where = {
       ...(type === 'booking' && { kind: 'HALL_PAYMENT' }),
-      ...(type === 'order' && { kind: { [Op.in]: ORDER_KINDS } }),
+      ...(type === 'order' && { kind: { [Op.ne]: 'HALL_PAYMENT' } }),
       ...(paymentMode && { paymentMode }),
       ...(status && { status }),
       ...(dateFrom || dateTo ? { txDate: { ...(dateFrom && { [Op.gte]: new Date(dateFrom + 'T00:00:00') }), ...(dateTo && { [Op.lte]: new Date(dateTo + 'T23:59:59.999') }) } } : {}),

@@ -84,7 +84,7 @@ h1, h2, h3, .font-display { font-family: 'Marcellus', serif; }
 #chit-portal { display: none; }
 
 @media print {
-  @page { size: 80mm auto; margin: 0; }
+  @page { size: var(--chit-page-width, 80mm) auto; margin: 0; }
   html {
     /* Force 1:1 scale — prevents Chrome from defaulting to 200% or other auto-scale */
     zoom: 1 !important;
@@ -92,7 +92,7 @@ h1, h2, h3, .font-display { font-family: 'Marcellus', serif; }
     print-color-adjust: exact;
   }
   html, body {
-    width: 80mm !important;
+    width: var(--chit-page-width, 80mm) !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
@@ -101,8 +101,8 @@ h1, h2, h3, .font-display { font-family: 'Marcellus', serif; }
   #root { display: none !important; }
   #chit-portal {
     display: block !important;
-    width: 76mm;
-    max-width: 76mm;
+    width: var(--chit-content-width, 76mm);
+    max-width: var(--chit-content-width, 76mm);
     padding: 2mm;
     font-family: 'Courier New', monospace;
     font-size: 10px;

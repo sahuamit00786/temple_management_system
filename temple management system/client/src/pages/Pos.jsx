@@ -186,10 +186,13 @@ export default function Pos() {
   const stars = lookups.NATCHATHIRAM?.values || [];
   const starName = stars.find((s) => String(s.id) === starId)?.nameEn || '';
 
-  // POS menu categories (marked isPosMenu=true in Temple Config)
+  // Chit preview width — mirrors receipt.paperWidth (58mm/80mm at 96dpi)
+  const chitPreviewWidth = settings['receipt.paperWidth'] === '58' ? 220 : 310;
+
+  // POS menu categories (marked isPosMenu=true and not hidden in Temple Config)
   const posCategories = useMemo(() =>
     Object.entries(lookups)
-      .filter(([, t]) => t.isPosMenu)
+      .filter(([, t]) => t.isPosMenu && t.isActive !== false)
       .map(([code, t]) => ({ code, ...t }))
       .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name)),
     [lookups]
@@ -479,7 +482,7 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
                       const doc = e.target.contentDocument;
                       if (doc) e.target.style.height = `${doc.documentElement.scrollHeight}px`;
                     }}
-                    style={{ width: '310px', minHeight: '120mm', border: 'none', background: '#fff', display: 'block', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', borderRadius: '4px' }}
+                    style={{ width: `${chitPreviewWidth}px`, minHeight: '120mm', border: 'none', background: '#fff', display: 'block', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', borderRadius: '4px' }}
                   />
                 </div>
               </div>
@@ -583,8 +586,8 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
         <div className="hidden lg:block fixed top-0 right-0 w-[340px] h-screen bg-gray-100 border-l border-gray-300 pointer-events-none overflow-hidden">
           <div className="pointer-events-auto w-full h-full flex flex-col overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
 
-            {/* 310px = ~80mm at 96dpi; mx-auto centers within 340px panel */}
-            <div className="flex flex-col gap-2 mx-auto pt-20 pb-6" style={{ width: '310px' }}>
+            {/* ~80mm/58mm at 96dpi; mx-auto centers within 340px panel */}
+            <div className="flex flex-col gap-2 mx-auto pt-20 pb-6" style={{ width: `${chitPreviewWidth}px` }}>
 
               <DevoteeSearch
                 receipt
@@ -670,7 +673,7 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
                 const doc = e.target.contentDocument;
                 if (doc) e.target.style.height = `${doc.documentElement.scrollHeight}px`;
               }}
-              style={{ width: '310px', minHeight: '120mm', border: 'none', background: '#fff', display: 'block', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', borderRadius: '4px' }}
+              style={{ width: `${chitPreviewWidth}px`, minHeight: '120mm', border: 'none', background: '#fff', display: 'block', boxShadow: '0 2px 12px rgba(0,0,0,0.15)', borderRadius: '4px' }}
             />
           </div>
           <button
@@ -688,6 +691,31 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
           >
             <Printer size={15} /> Print
           </button>
+
+          {can('pos', 'create') && (
+            <div className="flex flex-col gap-2">
+              <button className="btn-primary w-full justify-center" disabled={!cart.length} onClick={() => { setCartPreviewOpen(false); setTendered(total.toFixed(2)); setPaying('CASH'); }}>
+                <Banknote size={16} /> Cash
+              </button>
+              <button className="btn-outline w-full justify-center" disabled={!cart.length} onClick={() => { setCartPreviewOpen(false); setTendered(total.toFixed(2)); setPaying('DUITNOW_QR'); }}>
+                <QrCode size={16} /> DuitNow QR
+              </button>
+            </div>
+          )}
+          {can('pos', 'export') && lastChit && (
+            <button className="btn-ghost w-full justify-center" onClick={() => {
+              setCartPreviewOpen(false);
+              const deviceId = getDeviceId(settings);
+              const handleAfterPrint = () => {
+                savePrinterPreference(deviceId, 'user-selected');
+                window.removeEventListener('afterprint', handleAfterPrint);
+              };
+              window.addEventListener('afterprint', handleAfterPrint);
+              window.print();
+            }}>
+              <Printer size={15} /> Reprint last receipt
+            </button>
+          )}
         </div>
       </Modal>
 

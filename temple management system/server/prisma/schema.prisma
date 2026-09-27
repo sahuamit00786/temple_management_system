@@ -68,6 +68,7 @@ model LookupType {
   code      String        @unique
   name      String
   isPosMenu Boolean       @default(false)
+  isActive  Boolean       @default(true)
   sortOrder Int           @default(0)
   values    LookupValue[]
 }

@@ -23,7 +23,7 @@ r.get('/', async (req, res, next) => {
     });
     const out = {};
     for (const t of types) {
-      out[t.code] = { id: t.id, name: t.name, isPosMenu: t.isPosMenu, sortOrder: t.sortOrder, values: t.values };
+      out[t.code] = { id: t.id, name: t.name, isPosMenu: t.isPosMenu, isActive: t.isActive, sortOrder: t.sortOrder, values: t.values };
     }
     res.json(out);
   } catch (e) { next(e); }
@@ -60,11 +60,12 @@ r.put('/types/reorder', can('temple-config', 'edit'), async (req, res, next) => 
 r.put('/types/:id', can('temple-config', 'edit'), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const { name, sortOrder, isPosMenu } = req.body;
+    const { name, sortOrder, isPosMenu, isActive } = req.body;
     const data = {};
     if (name != null) data.name = name;
     if (sortOrder != null) data.sortOrder = sortOrder;
     if (isPosMenu != null) data.isPosMenu = isPosMenu;
+    if (isActive != null) data.isActive = isActive;
     await LookupType.update(data, { where: { id } });
     const type = await LookupType.findByPk(id);
     res.json(type);

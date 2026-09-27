@@ -53,7 +53,6 @@ r.post('/', can('pos', 'create'), async (req, res, next) => {
 });
 
 const TX_SORT = { receiptNo: 'receiptNo', txDate: 'txDate', total: 'total', devoteeName: 'devoteeName', paymentMode: 'paymentMode', kind: 'kind' };
-const ORDER_KINDS = ['ARCHANAI', 'DONATION', 'ANNADHANAM'];
 
 r.get('/', can('pos', 'view'), async (req, res, next) => {
   try {
@@ -61,11 +60,9 @@ r.get('/', can('pos', 'view'), async (req, res, next) => {
     const where = {
       ...(kind
         ? { kind }
-        : type === 'order'
-          ? { kind: { [Op.in]: ORDER_KINDS } }
-          : type === 'booking'
-            ? { kind: 'HALL_PAYMENT' }
-            : { kind: { [Op.ne]: 'HALL_PAYMENT' } }),
+        : type === 'booking'
+          ? { kind: 'HALL_PAYMENT' }
+          : { kind: { [Op.ne]: 'HALL_PAYMENT' } }),
       ...(paymentMode && { paymentMode }),
       ...(status && { status }),
       ...(staffId && { createdById: Number(staffId) }),
