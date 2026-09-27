@@ -1,0 +1,5 @@
+[2026-09-16T18:14:18.019Z] [INFO] === TMADJ SERVER STARTING ===
+[2026-09-16T18:14:18.020Z] [INFO] DB  → 187.127.159.160:3306 / caauto_temple_test_db
+[2026-09-16T18:14:18.021Z] [INFO] PORT → 2083
+[2026-09-16T18:14:21.614Z] [INFO] ✅ Database connected
+[2026-09-16T18:14:21.617Z] [INFO] ✅ Server running → http://localhost:2083/
