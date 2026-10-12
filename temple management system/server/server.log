@@ -497,6 +497,7 @@ SequelizeConnectionError: connect ETIMEDOUT
 [2026-07-09T07:03:13.684Z] [INFO] PORT → 2083
 [2026-07-09T07:03:14.170Z] [INFO] ✅ Database connected
 [2026-07-09T07:03:14.176Z] [INFO] ✅ Server running → http://localhost:2083/
+<<<<<<< HEAD:temple management system/server/server.log
 [2026-08-10T17:13:11.976Z] [INFO] === TMADJ SERVER STARTING ===
 [2026-08-10T17:13:11.978Z] [INFO] DB  → 187.127.159.160:3306 / caauto_temple_test_db
 [2026-08-10T17:13:11.978Z] [INFO] PORT → 2083
@@ -611,3 +612,13 @@ SequelizeConnectionError: connect ETIMEDOUT
 [2026-09-27T14:17:58.268Z] [INFO] PORT → 2083
 [2026-09-27T14:17:58.927Z] [INFO] ✅ Database connected
 [2026-09-27T14:17:58.930Z] [INFO] ✅ Server running → http://localhost:2083/
+=======
+[2026-08-10T15:24:45.559Z] [INFO] === TMADJ SERVER STARTING ===
+[2026-08-10T15:24:45.568Z] [INFO] DB  → localhost:3306 / insurvau_temple_db
+[2026-08-10T15:24:45.568Z] [INFO] PORT → 2083
+[2026-08-10T15:24:45.856Z] [FATAL] ❌ Database failed: Access denied for user 'insurvau_temple_db'@'localhost' (using password: YES)
+[2026-08-10T15:25:31.020Z] [INFO] === TMADJ SERVER STARTING ===
+[2026-08-10T15:25:31.022Z] [INFO] DB  → 127.0.0.1:3306 / gsgkarat_temple_db
+[2026-08-10T15:25:31.022Z] [INFO] PORT → 2083
+[2026-08-10T15:25:31.054Z] [FATAL] ❌ Database failed: Access denied for user 'gsgkarat_temple_db'@'localhost' (using password: YES)
+>>>>>>> b0773720603d94026841b3036a2bd4a85a278ed2:server/server.log
