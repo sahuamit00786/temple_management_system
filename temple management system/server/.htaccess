@@ -1,3 +1,10 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/gsgkarat/public_html/api-tmadjk.tms11ss.com"
+PassengerBaseURI "/"
+PassengerNodejs "/home/gsgkarat/nodevenv/public_html/api-tmadjk.tms11ss.com/24/bin/node"
+PassengerAppType node
+PassengerStartupFile app.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
 <IfModule mod_headers.c>
   <FilesMatch "\.(jpg|jpeg|png|gif|svg|webp|ico)$">
     Header set Access-Control-Allow-Origin "*"

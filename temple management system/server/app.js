@@ -41,7 +41,7 @@ log('INFO', `PORT → ${process.env.PORT || 4000}`);
 
 const app = express();
 
-const ALLOWED_ORIGINS = ['https://testclient-tmadjk.tms11ss.com','https://temple.insur-vault.com', 'http://temple.insur-vault.com', 'https://tmadjk.tms11ss.com', 'http://tmadjk.tms11ss.com','http://localhost:5173'];
+const ALLOWED_ORIGINS = ['https://testclient-tmadjk.tms11ss.com','https://temple.insur-vault.com', 'http://temple.insur-vault.com', 'https://tmadjk.tms11ss.com', 'http://tmadjk.tms11ss.com','https://sbt.tms11ss.com', 'http://localhost:5173'];
 app.use(cors({ origin: (origin, cb) => cb(null, !origin || ALLOWED_ORIGINS.includes(origin)), credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

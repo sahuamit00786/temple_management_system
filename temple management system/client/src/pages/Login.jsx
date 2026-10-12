@@ -24,7 +24,7 @@ export default function Login() {
       <div className="card w-full max-w-sm p-8">
         <div className="text-center mb-6">
           <img src="/icons/diya.svg" alt="" className="w-16 h-16 mx-auto mb-3" />
-          <h1 className="text-2xl text-maroon-900">TMADJ Temple</h1>
+          <h1 className="text-2xl text-maroon-900">SBT Seremban</h1>
           <p className="text-sm text-ink-600 mt-1">Sign in to the counter</p>
         </div>
         <div className="space-y-4">
