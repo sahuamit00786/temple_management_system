@@ -5,12 +5,14 @@ import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 
-import { sequelize, DevoteeMembership } from './db.js';
+import { sequelize, DevoteeMembership, EventType } from './db.js';
+import { migrateHallEventTypes } from './utils/migrateEventTypes.js';
 import { errorHandler } from './error.js';
 import { startReminderJob } from './jobs.js';
 
 import authRoutes      from './routes/auth.js';
 import lookupRoutes    from './routes/lookups.js';
+import eventTypeRoutes from './routes/eventTypes.js';
 import menuRoutes      from './routes/menu.js';
 import userRoutes      from './routes/users.js';
 import roleRoutes      from './routes/roles.js';
@@ -59,6 +61,7 @@ app.get('/', async (_req, res) => {
 app.get('/api/v1/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/v1/auth',         authRoutes);
 app.use('/api/v1/lookups',      lookupRoutes);
+app.use('/api/v1/event-types',  eventTypeRoutes);
 app.use('/api/v1/menu',         menuRoutes);
 app.use('/api/v1/users',        userRoutes);
 app.use('/api/v1/roles',        roleRoutes);
@@ -75,6 +78,8 @@ app.use(errorHandler);
 async function start() {
   try {
     await DevoteeMembership.sync({ force: false });
+    await EventType.sync({ force: false });
+    await migrateHallEventTypes(log);
     log('INFO', '✅ Database connected');
   } catch (err) {
     log('FATAL', `❌ Database failed: ${err.message}`);

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTabParam } from '../hooks/useTabParam.js';
+import { downloadName } from '../branding.js';
 import { useSearchParams } from 'react-router-dom';
 import { Minus, Plus, Printer, QrCode, Banknote, Search, Pencil, XCircle, Receipt, RotateCcw, Download } from 'lucide-react';
 // Search kept for All Orders search bar
@@ -70,7 +72,7 @@ const RM = (n) => `RM ${Number(n || 0).toFixed(2)}`;
 export default function Pos() {
   const { lookups, settings, can, user, online } = useApp();
   const [searchParams] = useSearchParams();
-  const [posTab, setPosTab] = useState(() => searchParams.get('tab') || 'create');
+  const [posTab, setPosTab] = useTabParam('create', ['create', 'orders']);
 
   const today = new Date().toLocaleDateString('en-CA');
 
@@ -322,7 +324,7 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
     const csv = [header.join(','), ...lines].join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = `orders-${new Date().toLocaleDateString('en-CA')}.csv`;
+    a.download = downloadName(`orders-${new Date().toLocaleDateString('en-CA')}.csv`);
     a.click();
   };
 

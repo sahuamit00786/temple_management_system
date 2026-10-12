@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DEFAULT_TEMPLE_NAME } from '../branding.js';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import * as Icons from 'lucide-react';
 import { LogOut, Wifi, WifiOff, RefreshCw, Menu as MenuIcon, ChevronLeft } from 'lucide-react';
@@ -38,7 +39,7 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
 
   const pageTitle = menu.find((m) => m.path === '/' ? location.pathname === '/' : location.pathname.startsWith(m.path))?.label || '';
-  const templeName = settings['temple.name'] || 'TMADJ Temple';
+  const templeName = settings['temple.name'] || DEFAULT_TEMPLE_NAME;
   const logo = settings['temple.logoUrl'];
 
   return (

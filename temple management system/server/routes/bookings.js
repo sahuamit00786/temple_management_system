@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Op, fn, col } from 'sequelize';
-import { sequelize, HallBooking, Devotee, Transaction, TransactionItem, BookingNote, BookingCancelNote, Reminder, LookupValue, Setting, User } from '../db.js';
+import { sequelize, HallBooking, Devotee, Transaction, TransactionItem, BookingNote, BookingCancelNote, Reminder, EventType, Setting, User } from '../db.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 import { can } from '../middleware/can.js';
 import { audit } from '../middleware/audit.js';
@@ -29,7 +29,7 @@ async function applyPayment(req, booking, amt, paymentMode = 'CASH') {
     devoteeName: booking.devotee.name,
     paymentMode,
     bookingId: booking.id,
-    items: [{ lookupValueId: booking.eventTypeId, nameSnapshot: `Hall payment - ${booking.bookingNo}`, priceSnapshot: amt, qty: 1 }],
+    items: [{ lookupValueId: 0, nameSnapshot: `Hall payment - ${booking.bookingNo}`, priceSnapshot: amt, qty: 1 }],
   });
   const agg = await Transaction.findOne({
     where: { bookingId: booking.id, status: 'PAID' },
@@ -153,7 +153,7 @@ r.get('/', can('bookings', 'view'), async (req, res, next) => {
 r.post('/', can('bookings', 'create'), async (req, res, next) => {
   try {
     const { clientUuid, devotee, devoteeId, eventTypeId, eventDate, startTime, endTime, notes, advanceAmount, paymentMode: advPayMode } = req.body;
-    const eventType = await LookupValue.findByPk(Number(eventTypeId));
+    const eventType = await EventType.findByPk(Number(eventTypeId));
     if (!eventType) return res.status(400).json({ error: 'Choose an event type' });
 
     const clash = await HallBooking.findOne({
@@ -292,7 +292,7 @@ r.put('/:id', can('bookings', 'edit'), async (req, res, next) => {
     if (existing.status === 'CANCELLED') return res.status(400).json({ error: 'Cannot edit a cancelled booking' });
     if (new Date(existing.startTime) <= new Date()) return res.status(400).json({ error: 'Cannot edit a booking that has already started' });
 
-    const eventType = await LookupValue.findByPk(Number(eventTypeId));
+    const eventType = await EventType.findByPk(Number(eventTypeId));
     if (!eventType) return res.status(400).json({ error: 'Choose an event type' });
 
     const clash = await HallBooking.findOne({

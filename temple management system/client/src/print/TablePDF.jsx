@@ -1,4 +1,5 @@
 import { Document, Page, View, Text, StyleSheet, pdf } from '@react-pdf/renderer';
+import { PDF_BRAND, downloadName } from '../branding.js';
 
 const M = '#5C1A1B';
 const BG = '#FDF8F0';
@@ -21,7 +22,7 @@ const s = StyleSheet.create({
 function TablePDF({ title, columns, rows }) {
   const date = new Date().toLocaleString('en-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   return (
-    <Document title={title} author="TMADJ Temple POS">
+    <Document title={title} author={PDF_BRAND}>
       <Page size="A4" style={s.page}>
         {/* Header */}
         <View style={s.header}>
@@ -58,7 +59,7 @@ function TablePDF({ title, columns, rows }) {
 
         {/* Footer */}
         <View style={s.footer} fixed>
-          <Text style={s.footerTxt}>TMADJ Temple POS · {title}</Text>
+          <Text style={s.footerTxt}>{PDF_BRAND} · {title}</Text>
           <Text style={s.footerTxt} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
       </Page>
@@ -71,7 +72,7 @@ export async function generateTablePdf(title, columns, rows) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${new Date().toLocaleDateString('en-CA')}.pdf`;
+  a.download = downloadName(`${title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${new Date().toLocaleDateString('en-CA')}.pdf`);
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

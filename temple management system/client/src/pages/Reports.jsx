@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useTabParam } from '../hooks/useTabParam.js';
+import { REPORT_PREFIX } from '../branding.js';
 import { Eye } from 'lucide-react';
 import { useApp } from '../auth/AppContext.jsx';
 import { api, qs } from '../api/client.js';
@@ -70,9 +72,9 @@ const DEFAULT_SORT = {
 };
 
 export default function Reports() {
-  const { lookups, can, user, online } = useApp();
+  const { lookups, eventTypes, can, user, online } = useApp();
   if (!online) return <OfflineBlock />;
-  const [tab, setTab] = useState('daily-collection');
+  const [tab, setTab] = useTabParam('daily-collection', ['daily-collection', 'bookings', 'payments', 'devotees', 'audit']);
   const [filters, setFilters] = useState({ dateFrom: '', dateTo: '' });
   const [data, setData] = useState({});
   const [err, setErr] = useState('');
@@ -91,7 +93,7 @@ export default function Reports() {
   };
 
   const doExportCsv = async (cols) => {
-    try { exportCsv(`tmadj-${tab}-${filters.dateFrom || 'all'}.csv`, cols, await fetchAllRows()); } catch {}
+    try { exportCsv(`${REPORT_PREFIX}-${tab}-${filters.dateFrom || 'all'}.csv`, cols, await fetchAllRows()); } catch {}
   };
 
   const doExportPdf = async (cols) => {
@@ -163,7 +165,7 @@ export default function Reports() {
     bookings: [
       { key: 'dateFrom', label: 'From', type: 'date' },
       { key: 'dateTo', label: 'To', type: 'date' },
-      { key: 'eventTypeId', label: 'Event type', type: 'select', options: (lookups.HALL_EVENT?.values || []).map((t) => ({ value: t.id, label: t.nameEn })) },
+      { key: 'eventTypeId', label: 'Event type', type: 'select', options: eventTypes.map((t) => ({ value: t.id, label: t.nameEn })) },
       { key: 'status', label: 'Status', type: 'select', options: Object.entries(STATUS_LABELS).map(([v, l]) => ({ value: v, label: l })) },
       { key: 'search', label: 'Search', type: 'search', placeholder: 'Booking no / name' },
     ],

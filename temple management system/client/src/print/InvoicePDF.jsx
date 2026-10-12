@@ -1,4 +1,5 @@
 import { Document, Page, View, Text, Image, StyleSheet, pdf, Font } from '@react-pdf/renderer';
+import { DEFAULT_TEMPLE_NAME } from '../branding.js';
 import API_HOST from '../config.js';
 
 Font.register({
@@ -95,7 +96,7 @@ function InvoicePDF({ booking, settings, eventTypeName }) {
   const totalPaid = booking.transactions.reduce((sum, t) => sum + Number(t.total), 0);
   const balance = Math.max(0, Number(booking.hallRate) - totalPaid);
   const d = booking.devotee;
-  const templeName = cfg['temple.name'] || 'TMADJ Temple';
+  const templeName = cfg['temple.name'] || DEFAULT_TEMPLE_NAME;
   const templeNameTa = cfg['temple.nameTa'];
   const showTa = templeNameTa && templeNameTa !== templeName;
 

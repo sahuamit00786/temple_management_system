@@ -82,6 +82,16 @@ export const LookupValue = sequelize.define('LookupValue', {
   sortOrder: { type: DataTypes.INTEGER, defaultValue: 0 },
 }, { tableName: 'lookupvalue', timestamps: false });
 
+export const EventType = sequelize.define('EventType', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  nameEn: { type: DataTypes.STRING, allowNull: false },
+  nameTa: DataTypes.STRING,
+  price: DataTypes.DECIMAL(10, 2),
+  depositPct: { type: DataTypes.INTEGER, defaultValue: 50 },
+  isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+  sortOrder: { type: DataTypes.INTEGER, defaultValue: 0 },
+}, { tableName: 'eventtype', timestamps: false });
+
 export const Devotee = sequelize.define('Devotee', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, allowNull: false },

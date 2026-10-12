@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTabParam } from '../hooks/useTabParam.js';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Plus, Banknote, Trash2, Info, Pencil, WifiOff, Download } from 'lucide-react';
 import { generateInvoicePdf } from '../print/InvoicePDF.jsx';
@@ -12,7 +13,7 @@ import Tabs from '../components/Tabs.jsx';
 import Modal from '../components/Modal.jsx';
 import DataGrid from '../components/DataGrid.jsx';
 import FilterBar from '../components/FilterBar.jsx';
-import LookupSelect from '../components/LookupSelect.jsx';
+import EventTypeSelect from '../components/EventTypeSelect.jsx';
 import DevoteeSearch from '../components/DevoteeSearch.jsx';
 import SearchableSelect from '../components/SearchableSelect.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
@@ -49,9 +50,9 @@ const emptyForm = {
 };
 
 export default function Bookings() {
-  const { lookups, settings, can, online } = useApp();
+  const { lookups, eventTypes, settings, can, online } = useApp();
   const [searchParams] = useSearchParams();
-  const [tab, setTab] = useState(() => searchParams.get('tab') || 'calendar');
+  const [tab, setTab] = useTabParam('calendar', ['calendar', 'list']);
   const [month, setMonth] = useState(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; });
   const [calRows, setCalRows] = useState([]);
   const [list, setList] = useState({ rows: [], total: 0 });
@@ -108,8 +109,7 @@ export default function Bookings() {
   };
   const handleFilter = (k, v) => { setFilters((f) => ({ ...f, [k]: v })); setPage(1); };
 
-  const eventTypes = lookups.HALL_EVENT?.values?.filter((v) => v.isActive) || [];
-  const typeName = (id) => eventTypes.find((t) => t.id === id)?.nameEn || '';
+    const typeName = (id) => eventTypes.find((t) => t.id === id)?.nameEn || '';
   const payModes = (lookups.BOOKING_PAYMENT_MODE?.values || lookups.PAYMENT_MODE?.values || []).filter((v) => v.isActive);
   const payModeOptions = payModes.map((m) => ({ value: m.meta?.code || m.nameEn.toUpperCase(), label: m.nameEn }));
 
@@ -621,7 +621,7 @@ export default function Bookings() {
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="sm:col-span-2">
               <label className="label">Event type</label>
-              <LookupSelect typeCode="HALL_EVENT" value={form.eventTypeId} onChange={(v) => setForm({ ...form, eventTypeId: v, advanceAmount: '' })} showPrice />
+              <EventTypeSelect value={form.eventTypeId} onChange={(v) => setForm({ ...form, eventTypeId: v, advanceAmount: '' })} showPrice />
             </div>
             <div>
               <label className="label">Start date &amp; time</label>

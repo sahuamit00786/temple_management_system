@@ -1,3 +1,4 @@
+import { DEFAULT_TEMPLE_NAME } from '../branding.js';
 const RM = (n) => `RM ${Number(n || 0).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-MY', { day: '2-digit', month: 'long', year: 'numeric' });
 const fmtTime = (d) => new Date(d).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -95,7 +96,7 @@ export function buildInvoiceHtml(booking, settings, eventTypeName) {
   <div class="temple-block">
     ${logoHtml}
     <div>
-      <div class="temple-name">${s['temple.name'] || 'TMADJ Temple'}</div>
+      <div class="temple-name">${s['temple.name'] || DEFAULT_TEMPLE_NAME}</div>
       ${s['temple.nameTa'] && s['temple.nameTa'] !== s['temple.name'] ? `<div class="temple-sub">${s['temple.nameTa']}</div>` : ''}
       <div class="temple-info">
         ${s['temple.address'] ? `${s['temple.address']}<br>` : ''}
@@ -201,7 +202,7 @@ ${booking.transactions.length > 0 ? `
   </div>
   <div>
     <div class="sig-line">Authorised Signature &amp; Stamp</div>
-    <div class="watermark">${s['temple.name'] || 'TMADJ Temple'}</div>
+    <div class="watermark">${s['temple.name'] || DEFAULT_TEMPLE_NAME}</div>
   </div>
 </div>
 

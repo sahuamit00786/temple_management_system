@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTabParam } from '../hooks/useTabParam.js';
 import { Plus, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 import { useApp } from '../auth/AppContext.jsx';
@@ -9,7 +10,7 @@ import Modal from '../components/Modal.jsx';
 export default function Lookups() {
   const { can, refreshMasterData } = useApp();
   const [allLookups, setAllLookups] = useState({});
-  const [tab, setTab] = useState('');
+  const [tab, setTab] = useTabParam('');
   const [editing, setEditing] = useState(null);
   const [deletingVal, setDeletingVal] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -40,7 +41,6 @@ export default function Lookups() {
 
   const all = (allLookups[tab]?.values || []);
   const parents = all.filter((v) => !v.parentId);
-  const isHallEvent = tab === 'HALL_EVENT';
   const isMembership = tab === 'MEMBERSHIP_TYPE';
   const showPrice = !['PAYMENT_MODE', 'BOOKING_PAYMENT_MODE', 'NATCHATHIRAM'].includes(tab);
 
@@ -51,7 +51,6 @@ export default function Lookups() {
         nameEn: editing.nameEn,
         nameTa: editing.nameTa || null,
         price: editing.price === '' || editing.price == null ? null : Number(editing.price),
-        depositPct: isHallEvent ? Number(editing.depositPct || 50) : undefined,
         meta: isMembership && editing.durationQty
           ? { unit: editing.durationUnit || 'month', quantity: Number(editing.durationQty) }
           : undefined,
@@ -95,7 +94,6 @@ export default function Lookups() {
       <td className="text-ink-600">{v.nameTa || '—'}</td>
       {showPrice && <td className="tabular-nums">{v.price != null ? `RM ${Number(v.price).toFixed(2)}` : '—'}</td>}
       {isMembership && <td className="text-ink-600">{fmtDuration(v)}</td>}
-      {isHallEvent && <td className="tabular-nums">{v.depositPct ?? 50}%</td>}
       <td><span className={v.isActive ? 'chip chip-paid' : 'chip chip-cancelled'}>{v.isActive ? 'Active' : 'Inactive'}</span></td>
       <td className="whitespace-nowrap">
         {can('lookups', 'edit') && (
@@ -145,14 +143,13 @@ export default function Lookups() {
                   <th>Name (Tamil)</th>
                   {showPrice && <th>Price</th>}
                   {isMembership && <th>Duration</th>}
-                  {isHallEvent && <th>Deposit %</th>}
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {parents.length === 0
-                  ? <tr><td colSpan={4 + (showPrice ? 1 : 0) + (isMembership ? 1 : 0) + (isHallEvent ? 1 : 0)} className="text-center text-ink-600 py-8">No values yet — add the first one.</td></tr>
+                  ? <tr><td colSpan={4 + (showPrice ? 1 : 0) + (isMembership ? 1 : 0)} className="text-center text-ink-600 py-8">No values yet — add the first one.</td></tr>
                   : parents.map((p) => <Row key={p.id} v={p} />)
                 }
               </tbody>
@@ -199,13 +196,6 @@ export default function Lookups() {
                     <option value="year">Year(s)</option>
                   </select>
                 </div>
-              </div>
-            )}
-            {isHallEvent && (
-              <div>
-                <label className="label">Deposit %</label>
-                <input className="input" type="number" placeholder="50" value={editing.depositPct ?? 50}
-                  onChange={(e) => setEditing({ ...editing, depositPct: e.target.value })} />
               </div>
             )}
             {err && <p className="text-sm text-kumkum-600">{err}</p>}

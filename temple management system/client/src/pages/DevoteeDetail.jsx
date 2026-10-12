@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTabParam } from '../hooks/useTabParam.js';
+import { downloadName } from '../branding.js';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Pencil, X, Check, Trash2, StickyNote, Plus, Printer, Download } from 'lucide-react';
 import { useApp } from '../auth/AppContext.jsx';
@@ -41,8 +43,8 @@ const STATUS_CLASS = {
 export default function DevoteeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { can, lookups, settings } = useApp();
-  const [tab, setTab] = useState('details');
+  const { can, lookups, eventTypes, settings } = useApp();
+  const [tab, setTab] = useTabParam('details', ['details', 'bookings', 'payments', 'orders', 'membership']);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
@@ -112,7 +114,7 @@ export default function DevoteeDetail() {
     } catch (e) { alert(e.message); }
   };
 
-  const hallEvents = lookups.HALL_EVENT?.values || [];
+  const hallEvents = eventTypes;
   const eventName = (typeId) => hallEvents.find((e) => e.id === typeId)?.nameEn || '—';
 
   const openMembershipEdit = (rec, membershipId = null) => setMemEdit({ data: rec, membershipId });
@@ -138,7 +140,7 @@ export default function DevoteeDetail() {
       const url = await generateMembershipPdf(payload, settings);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Membership-${dev.name.replace(/\s+/g, '_')}.pdf`;
+      a.download = downloadName(`Membership-${dev.name.replace(/\s+/g, '_')}.pdf`);
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) { alert(e.message); }

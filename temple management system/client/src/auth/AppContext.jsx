@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { api, setTokens, getAccessToken, assetUrl } from '../api/client.js';
-import { mirrorLookups, readLookups, mirrorSettings, readSettings, mirrorDevotees, mirrorBookings } from '../db/dexie.js';
+import { mirrorLookups, readLookups, mirrorSettings, readSettings, mirrorDevotees, mirrorBookings, mirrorEventTypes, readEventTypes } from '../db/dexie.js';
 import { onSyncChange } from '../db/syncEngine.js';
 
 const Ctx = createContext(null);
@@ -10,6 +10,7 @@ export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [booted, setBooted] = useState(false);
   const [lookups, setLookups] = useState({});
+  const [eventTypes, setEventTypes] = useState([]);
   const [settings, setSettings] = useState({});
   const [menu, setMenu] = useState([]);
   const [online, setOnline] = useState(true);
@@ -19,21 +20,23 @@ export function AppProvider({ children }) {
   // Pull master data online; fall back to the Dexie mirror offline
   const refreshMasterData = useCallback(async () => {
     try {
-      const [lk, st, mn, devs, bkgs] = await Promise.all([
+      const [lk, st, mn, devs, bkgs, evt] = await Promise.all([
         api('/lookups'),
         api('/settings'),
         api('/menu'),
         api('/devotees?pageSize=1000&sortBy=name&sortOrder=asc').catch(() => null),
         api('/bookings?pageSize=300&sortBy=eventDate&sortOrder=desc').catch(() => null),
+        api('/event-types?all=1'),
       ]);
       const st2 = Object.fromEntries(Object.entries(st).map(([k, v]) => [k, typeof v === 'string' && v.startsWith('/uploads/') ? assetUrl(v) : v]));
-      setLookups(lk); setSettings(st2); setMenu(mn);
-      mirrorLookups(lk); mirrorSettings(st2);
+      setLookups(lk); setSettings(st2); setMenu(mn); setEventTypes(evt);
+      mirrorLookups(lk); mirrorSettings(st2); mirrorEventTypes(evt);
       localStorage.setItem('tmadj.menu', JSON.stringify(mn));
       if (devs) mirrorDevotees(devs.rows || []);
       if (bkgs) mirrorBookings(bkgs.rows || []);
     } catch {
       setLookups(await readLookups());
+      setEventTypes(await readEventTypes());
       setSettings(await readSettings());
       setMenu(JSON.parse(localStorage.getItem('tmadj.menu') || '[]'));
     }
@@ -48,6 +51,7 @@ export function AppProvider({ children }) {
         const cached = localStorage.getItem('tmadj.user');
         if (cached) setUser(JSON.parse(cached));
         setLookups(await readLookups());
+        setEventTypes(await readEventTypes());
         setSettings(await readSettings());
         setMenu(JSON.parse(localStorage.getItem('tmadj.menu') || '[]'));
         setBooted(true);
@@ -86,7 +90,7 @@ export function AppProvider({ children }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, booted, login, logout, can, lookups, settings, menu, online, refreshMasterData }}>
+    <Ctx.Provider value={{ user, booted, login, logout, can, lookups, eventTypes, settings, menu, online, refreshMasterData }}>
       {children}
     </Ctx.Provider>
   );

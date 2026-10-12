@@ -80,7 +80,7 @@ function getMissing(body, ctx) {
 }
 
 export default function SendMessageModal({ open, onClose, devotee, booking, eventTypeName }) {
-  const { settings, lookups } = useApp();
+  const { settings, eventTypes } = useApp();
   const templates = Array.isArray(settings['message.templates']) ? settings['message.templates'] : [];
 
   const [tplId, setTplId] = useState('');
@@ -88,7 +88,7 @@ export default function SendMessageModal({ open, onClose, devotee, booking, even
   const [selectedBookingId, setSelectedBookingId] = useState('');
   const [selectedBookingFull, setSelectedBookingFull] = useState(null);
 
-  const eventTypes = lookups.HALL_EVENT?.values || [];
+  
   const getEventTypeName = (id) => eventTypes.find((t) => t.id === id)?.nameEn || '';
 
   // Load devotee bookings if no booking provided

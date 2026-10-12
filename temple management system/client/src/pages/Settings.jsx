@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTabParam } from '../hooks/useTabParam.js';
 import { Upload, Save, Plus, Pencil, Trash2, Eye, EyeOff, X } from 'lucide-react';
 import { useApp } from '../auth/AppContext.jsx';
 import { api } from '../api/client.js';
@@ -96,8 +97,8 @@ function TemplateEditor({ tpl, onSave, onCancel }) {
 
 export default function Settings() {
   const { settings, refreshMasterData, can, online } = useApp();
-  const [tab, setTab] = useState('profile');
-  const [paymentSubTab, setPaymentSubTab] = useState('qr');
+  const [tab, setTab] = useTabParam('profile', ['profile', 'receipt', 'payment', 'numbering', 'templates']);
+  const [paymentSubTab, setPaymentSubTab] = useTabParam('qr', ['qr', 'bank'], 'sub');
   const [form, setForm] = useState({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');

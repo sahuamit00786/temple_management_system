@@ -1,4 +1,5 @@
 import { Search, RotateCcw, Download, Printer } from 'lucide-react';
+import { downloadName } from '../branding.js';
 import SearchableSelect from './SearchableSelect.jsx';
 
 // Shared multi-filter bar used by every list page & report
@@ -81,7 +82,7 @@ export function exportCsv(filename, columns, rows) {
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = filename;
+  a.download = downloadName(filename);
   a.click();
   URL.revokeObjectURL(a.href);
 }

@@ -89,6 +89,18 @@ model LookupValue {
   sortOrder  Int           @default(0)
 }
 
+model EventType {
+  id         Int     @id @default(autoincrement())
+  nameEn     String
+  nameTa     String?
+  price      Decimal? @db.Decimal(10, 2)
+  depositPct Int?    @default(50)
+  isActive   Boolean @default(true)
+  sortOrder  Int     @default(0)
+
+  @@map("eventtype")
+}
+
 model Devotee {
   id                   Int           @id @default(autoincrement())
   name                 String

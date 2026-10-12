@@ -17,7 +17,6 @@ const MENUS = [
 const LOOKUP_TYPES = [
   { code: 'ARCHANAI', name: 'Archanai / Ubhayam Types' },
   { code: 'DONATION', name: 'Donation Categories' },
-  { code: 'HALL_EVENT', name: 'Hall & Event Types' },
   { code: 'ANNADHANAM', name: 'Annadhanam Types' },
   { code: 'PAYMENT_MODE', name: 'POS Payment Modes' },
   { code: 'BOOKING_PAYMENT_MODE', name: 'Booking Payment Modes' },
@@ -94,12 +93,13 @@ async function main() {
   await addValue('DONATION', 'Undi Donation', { parentId: general.id, sortOrder: 1 });
   await addValue('DONATION', 'Special Pooja Sponsorship', { parentId: general.id, sortOrder: 2 });
 
-  // Hall events (RM rates from client doc)
-  await addValue('HALL_EVENT', 'Wedding', { price: 1000, depositPct: 50, sortOrder: 1 });
-  await addValue('HALL_EVENT', 'Engagement', { price: 5000, depositPct: 50, sortOrder: 2 });
-  await addValue('HALL_EVENT', 'Bangle Ceremony', { price: 800, depositPct: 50, sortOrder: 3 });
-  await addValue('HALL_EVENT', 'Baby Shower', { price: 800, depositPct: 50, sortOrder: 4 });
-  await addValue('HALL_EVENT', 'Temple Archanai Wedding', { price: 1500, depositPct: 50, sortOrder: 5 });
+  // Hall events (RM rates from client doc) - own table, managed in Temple Config
+  const HALL_EVENTS = [
+    ['Wedding', 1000], ['Engagement', 5000], ['Bangle Ceremony', 800], ['Baby Shower', 800], ['Temple Archanai Wedding', 1500],
+  ];
+  if (!(await db.eventType.count())) {
+    await db.eventType.createMany({ data: HALL_EVENTS.map(([nameEn, price], i) => ({ nameEn, price, depositPct: 50, sortOrder: i + 1 })) });
+  }
 
   // Annadhanam
   await addValue('ANNADHANAM', 'Ponggal', { price: 30, sortOrder: 1 });

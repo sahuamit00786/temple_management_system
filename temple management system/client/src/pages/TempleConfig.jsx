@@ -1,9 +1,17 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTabParam } from '../hooks/useTabParam.js';
 import { Plus, Pencil, Trash2, CornerDownRight, Eye, EyeOff, FolderPlus, GripVertical, FolderOpen } from 'lucide-react';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 import Modal from '../components/Modal.jsx';
 import { useApp } from '../auth/AppContext.jsx';
 import { api } from '../api/client.js';
+import Tabs from '../components/Tabs.jsx';
+import EventTypesPanel from '../components/EventTypesPanel.jsx';
+
+const SECTIONS = [
+  { key: 'items', label: 'Items' },
+  { key: 'hall-events', label: 'Hall & Event Types' },
+];
 
 function slugify(name) {
   return name.trim().toUpperCase().replace(/[^A-Z0-9]+/gi, '_').replace(/^_+|_+$/g, '');
@@ -93,7 +101,8 @@ export default function TempleConfig() {
   const [allLookups, setAllLookups] = useState(() => {
     try { return JSON.parse(localStorage.getItem('tmadj.allLookups') || '{}'); } catch { return {}; }
   });
-  const [tab, setTab] = useState('');
+  const [section, setSection] = useTabParam('items', SECTIONS.map((x) => x.key));
+  const [tab, setTab] = useTabParam('', null, 'category');
 
   // item modals
   const [editing, setEditing] = useState(null);
@@ -323,6 +332,12 @@ export default function TempleConfig() {
           <span>Offline — showing cached lookup data. Changes cannot be saved until reconnected.</span>
         </div>
       )}
+      <Tabs tabs={SECTIONS} active={section} onChange={setSection} />
+
+      {section === 'hall-events' && <EventTypesPanel />}
+
+      {section === 'items' && (
+      <>
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-ink-600">Manage POS counter categories and items. Changes appear instantly at the counter.</p>
         {can('temple-config', 'create') && (
@@ -337,11 +352,12 @@ export default function TempleConfig() {
         )}
       </div>
 
-      {categories.length === 0 ? (
-        <div className="card p-10 text-center text-ink-600 text-sm">
+      {categories.length === 0 && (
+        <div className="card p-10 text-center text-ink-600 text-sm mb-4">
           No POS categories yet. Click "Add category" to create the first one.
         </div>
-      ) : (
+      )}
+      {(
         <>
           {/* ── Category tabs ───────────────────────────────────────────────────── */}
           <div className="flex flex-wrap gap-1.5 mb-4">
@@ -485,6 +501,8 @@ export default function TempleConfig() {
             </div>
           )}
         </>
+      )}
+      </>
       )}
 
       {/* ── Add / Edit item modal ──────────────────────────────────────────────── */}

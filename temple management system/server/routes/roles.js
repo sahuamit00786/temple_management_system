@@ -30,6 +30,21 @@ r.post('/', can('users', 'create'), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+r.put('/:id', can('users', 'edit'), async (req, res, next) => {
+  try {
+    const role = await Role.findByPk(Number(req.params.id));
+    if (!role) return res.status(404).json({ error: 'Role not found' });
+    if (role.name === 'Superadmin') return res.status(400).json({ error: 'Superadmin cannot be edited' });
+    const name = String(req.body.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'Role name is required' });
+    if (role.isSystem && name !== role.name) return res.status(400).json({ error: 'System role name cannot be changed' });
+    const before = role.toJSON();
+    await role.update({ name, description: req.body.description });
+    await audit(req, 'UPDATE', 'Role', role.id, before, role.toJSON());
+    res.json(role);
+  } catch (e) { next(e); }
+});
+
 r.get('/:id/permissions', can('users', 'view'), async (req, res, next) => {
   try {
     const roleId = Number(req.params.id);

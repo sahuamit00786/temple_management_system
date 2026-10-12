@@ -52,6 +52,23 @@ ldb.version(5).stores({
   paymentOutbox: '++id, bookingId, status, createdAt',
 });
 
+ldb.version(6).stores({
+  eventTypes: 'id',
+});
+
+ldb.version(7).stores({
+  eventTypes: 'id, sortOrder',
+});
+
+/* ── Event types ── */
+export async function mirrorEventTypes(rows) {
+  await ldb.eventTypes.clear();
+  await ldb.eventTypes.bulkPut(rows);
+}
+export async function readEventTypes() {
+  return ldb.eventTypes.orderBy('sortOrder').toArray();
+}
+
 /* ── Lookups ── */
 export async function mirrorLookups(data) {
   await ldb.lookups.clear();

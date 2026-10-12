@@ -9,7 +9,7 @@ import StatCard from '../components/StatCard.jsx';
 import DataTable from '../components/DataTable.jsx';
 import Modal from '../components/Modal.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
-import LookupSelect from '../components/LookupSelect.jsx';
+import EventTypeSelect from '../components/EventTypeSelect.jsx';
 import DevoteeSearch from '../components/DevoteeSearch.jsx';
 import SearchableSelect from '../components/SearchableSelect.jsx';
 import SendMessageModal from '../components/SendMessageModal.jsx';
@@ -47,7 +47,7 @@ const dashStatusChip = (b) => {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { lookups, can, online } = useApp();
+  const { lookups, eventTypes, can, online } = useApp();
   const { dismissedIds, dismissedMemberIds, dismissBooking, dismissMember } = useDismissals();
   const [data, setData] = useState(null);
   const [cacheAge, setCacheAge] = useState(null);
@@ -226,8 +226,7 @@ export default function Dashboard() {
     setMonth(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
   };
 
-  const eventTypes = lookups.HALL_EVENT?.values || [];
-  const typeName = (id) => eventTypes.find((t) => t.id === id)?.nameEn || '';
+    const typeName = (id) => eventTypes.find((t) => t.id === id)?.nameEn || '';
 
   const first = new Date(`${month}-01T00:00:00`);
   const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
@@ -731,7 +730,7 @@ export default function Dashboard() {
       {/* New booking modal */}
       <Modal title="New hall booking" open={!!form} onClose={() => setForm(null)} wide>
         {form && (() => {
-          const selectedType = (lookups.HALL_EVENT?.values || []).find((t) => String(t.id) === form.eventTypeId);
+          const selectedType = eventTypes.find((t) => String(t.id) === form.eventTypeId);
           const deposit = selectedType ? (Number(selectedType.price || 0) * (selectedType.depositPct ?? 50)) / 100 : 0;
           const payModeOptions = payModes.map((m) => ({ value: m.meta?.code || m.nameEn.toUpperCase(), label: m.nameEn }));
           const endBeforeStart = form.startDate && form.endDate && form.startTime && form.endTime &&
@@ -740,7 +739,7 @@ export default function Dashboard() {
             <div className="grid sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="label">Event type</label>
-                <LookupSelect typeCode="HALL_EVENT" value={form.eventTypeId} onChange={(v) => setForm({ ...form, eventTypeId: v, advanceAmount: '' })} showPrice />
+                <EventTypeSelect value={form.eventTypeId} onChange={(v) => setForm({ ...form, eventTypeId: v, advanceAmount: '' })} showPrice />
               </div>
               <div>
                 <label className="label">Start date &amp; time</label>

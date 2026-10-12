@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useTabParam } from '../hooks/useTabParam.js';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useApp } from '../auth/AppContext.jsx';
 import { api } from '../api/client.js';
@@ -20,7 +21,7 @@ const ACTION_LABEL = { canView: 'View', canCreate: 'Create', canEdit: 'Edit', ca
 
 export default function Users() {
   const { can, user: me, online } = useApp();
-  const [tab, setTab] = useState('users');
+  const [tab, setTab] = useTabParam('users', ['users', 'roles', 'permissions']);
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [editUser, setEditUser] = useState(null);
@@ -83,7 +84,11 @@ export default function Users() {
 
   const saveRole = async () => {
     setBusy(true); setErr('');
-    try { await api('/roles', { method: 'POST', body: newRole }); setNewRole(null); load(); }
+    try {
+      if (newRole.id) await api(`/roles/${newRole.id}`, { method: 'PUT', body: newRole });
+      else await api('/roles', { method: 'POST', body: newRole });
+      setNewRole(null); load();
+    }
     catch (e) { setErr(e.message); }
     finally { setBusy(false); }
   };
@@ -155,6 +160,9 @@ export default function Users() {
               { key: 'description', label: 'Description' },
               { key: '_count', label: 'Users', render: (r) => r._count?.users ?? 0 },
               { key: 'isSystem', label: '', render: (r) => r.isSystem && <span className="chip bg-gold-300/30 text-gold-500">System</span> },
+              { key: 'actions', label: '', render: (r) => can('users', 'edit') && (
+                <button className="btn-ghost !p-1.5" onClick={() => setNewRole({ id: r.id, name: r.name, description: r.description || '', isSystem: r.isSystem })}><Pencil size={15} /></button>
+              ) },
             ]}
             rows={roles.filter((r) => r.name !== 'Superadmin')}
           />
@@ -261,10 +269,10 @@ export default function Users() {
         )}
       </Modal>
 
-      <Modal title="Add role" open={!!newRole} onClose={() => setNewRole(null)}>
+      <Modal title={newRole?.id ? `Edit ${newRole.name}` : 'Add role'} open={!!newRole} onClose={() => setNewRole(null)}>
         {newRole && (
           <div className="space-y-3">
-            <div><label className="label">Role name</label><input className="input" placeholder="e.g. Cashier" value={newRole.name} onChange={(e) => setNewRole({ ...newRole, name: e.target.value })} /></div>
+            <div><label className="label">Role name</label><input className="input" placeholder="e.g. Cashier" disabled={!!newRole.isSystem} value={newRole.name} onChange={(e) => setNewRole({ ...newRole, name: e.target.value })} /></div>
             <div><label className="label">Description</label><input className="input" placeholder="Brief description of this role" value={newRole.description} onChange={(e) => setNewRole({ ...newRole, description: e.target.value })} /></div>
             <div className="flex justify-end gap-2">
               <button className="btn-ghost" onClick={() => setNewRole(null)}>Cancel</button>
