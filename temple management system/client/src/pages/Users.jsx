@@ -27,6 +27,7 @@ export default function Users() {
   const [editUser, setEditUser] = useState(null);
   const [newRole, setNewRole] = useState(null);
   const [deletingUser, setDeletingUser] = useState(null);
+  const [deletingRole, setDeletingRole] = useState(null);
   const [permUserId, setPermUserId] = useState('');
   const [matrix, setMatrix] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -100,6 +101,13 @@ export default function Users() {
     finally { setBusy(false); }
   };
 
+  const removeRole = async () => {
+    setBusy(true); setErr('');
+    try { await api(`/roles/${deletingRole.id}`, { method: 'DELETE' }); setDeletingRole(null); load(); }
+    catch (e) { setErr(e.message); setDeletingRole(null); }
+    finally { setBusy(false); }
+  };
+
   const savePermissions = async () => {
     setBusy(true); setErr(''); setSaved(false);
     try {
@@ -160,8 +168,11 @@ export default function Users() {
               { key: 'description', label: 'Description' },
               { key: '_count', label: 'Users', render: (r) => r._count?.users ?? 0 },
               { key: 'isSystem', label: '', render: (r) => r.isSystem && <span className="chip bg-gold-300/30 text-gold-500">System</span> },
-              { key: 'actions', label: '', render: (r) => can('users', 'edit') && (
-                <button className="btn-ghost !p-1.5" onClick={() => setNewRole({ id: r.id, name: r.name, description: r.description || '', isSystem: r.isSystem })}><Pencil size={15} /></button>
+              { key: 'actions', label: '', render: (r) => (
+                <div className="flex gap-1">
+                  {can('users', 'edit') && <button className="btn-ghost !p-1.5" onClick={() => setNewRole({ id: r.id, name: r.name, description: r.description || '', isSystem: r.isSystem })}><Pencil size={15} /></button>}
+                  {can('users', 'delete') && !r.isSystem && <button className="btn-ghost !p-1.5 text-kumkum-600" onClick={() => setDeletingRole(r)}><Trash2 size={15} /></button>}
+                </div>
               ) },
             ]}
             rows={roles.filter((r) => r.name !== 'Superadmin')}
@@ -288,6 +299,15 @@ export default function Users() {
         message={`Delete user "${deletingUser?.name}"? This cannot be undone.`}
         onConfirm={removeUser}
         onClose={() => setDeletingUser(null)}
+        busy={busy}
+      />
+
+      <ConfirmModal
+        open={!!deletingRole}
+        title="Delete role"
+        message={`Delete role "${deletingRole?.name}"? This cannot be undone.`}
+        onConfirm={removeRole}
+        onClose={() => setDeletingRole(null)}
         busy={busy}
       />
 

@@ -1,6 +1,6 @@
 ﻿import { Router } from 'express';
 import { literal } from 'sequelize';
-import { Role, MenuItem, RolePermission } from '../db.js';
+import { Role, MenuItem, RolePermission, User } from '../db.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 import { can } from '../middleware/can.js';
 import { audit } from '../middleware/audit.js';
@@ -42,6 +42,21 @@ r.put('/:id', can('users', 'edit'), async (req, res, next) => {
     await role.update({ name, description: req.body.description });
     await audit(req, 'UPDATE', 'Role', role.id, before, role.toJSON());
     res.json(role);
+  } catch (e) { next(e); }
+});
+
+r.delete('/:id', can('users', 'delete'), async (req, res, next) => {
+  try {
+    const role = await Role.findByPk(Number(req.params.id));
+    if (!role) return res.status(404).json({ error: 'Role not found' });
+    if (role.isSystem || role.name === 'Superadmin') return res.status(400).json({ error: 'System roles cannot be deleted' });
+    const inUse = await User.count({ where: { roleId: role.id } });
+    if (inUse > 0) return res.status(400).json({ error: `Cannot delete: ${inUse} user(s) still have this role. Reassign them first.` });
+    const before = role.toJSON();
+    await RolePermission.destroy({ where: { roleId: role.id } });
+    await role.destroy();
+    await audit(req, 'DELETE', 'Role', role.id, before, null);
+    res.json({ ok: true });
   } catch (e) { next(e); }
 });
 
