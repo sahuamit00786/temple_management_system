@@ -26,11 +26,13 @@ export function AppProvider({ children }) {
         api('/menu'),
         api('/devotees?pageSize=1000&sortBy=name&sortOrder=asc').catch(() => null),
         api('/bookings?pageSize=300&sortBy=eventDate&sortOrder=desc').catch(() => null),
-        api('/event-types?all=1'),
+        api('/event-types?all=1').catch(() => null),
       ]);
+      const evtRows = Array.isArray(evt) ? evt : await readEventTypes();
       const st2 = Object.fromEntries(Object.entries(st).map(([k, v]) => [k, typeof v === 'string' && v.startsWith('/uploads/') ? assetUrl(v) : v]));
-      setLookups(lk); setSettings(st2); setMenu(mn); setEventTypes(evt);
-      mirrorLookups(lk); mirrorSettings(st2); mirrorEventTypes(evt);
+      setLookups(lk); setSettings(st2); setMenu(mn); setEventTypes(evtRows);
+      mirrorLookups(lk); mirrorSettings(st2);
+      if (Array.isArray(evt)) mirrorEventTypes(evt);
       localStorage.setItem('tmadj.menu', JSON.stringify(mn));
       if (devs) mirrorDevotees(devs.rows || []);
       if (bkgs) mirrorBookings(bkgs.rows || []);
@@ -86,6 +88,7 @@ export function AppProvider({ children }) {
   const can = (menuKey, action = 'view') => {
     if (!user) return false;
     if (user.role === 'Superadmin') return true;
+    if (action === 'edit' || action === 'delete') return true;
     return Boolean(user.permissions?.[menuKey]?.[action]);
   };
 

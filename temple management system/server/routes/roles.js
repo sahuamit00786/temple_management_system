@@ -37,7 +37,6 @@ r.put('/:id', can('users', 'edit'), async (req, res, next) => {
     if (role.name === 'Superadmin') return res.status(400).json({ error: 'Superadmin cannot be edited' });
     const name = String(req.body.name || '').trim();
     if (!name) return res.status(400).json({ error: 'Role name is required' });
-    if (role.isSystem && name !== role.name) return res.status(400).json({ error: 'System role name cannot be changed' });
     const before = role.toJSON();
     await role.update({ name, description: req.body.description });
     await audit(req, 'UPDATE', 'Role', role.id, before, role.toJSON());
@@ -49,7 +48,7 @@ r.delete('/:id', can('users', 'delete'), async (req, res, next) => {
   try {
     const role = await Role.findByPk(Number(req.params.id));
     if (!role) return res.status(404).json({ error: 'Role not found' });
-    if (role.isSystem || role.name === 'Superadmin') return res.status(400).json({ error: 'System roles cannot be deleted' });
+    if (role.name === 'Superadmin') return res.status(400).json({ error: 'Superadmin cannot be deleted' });
     const inUse = await User.count({ where: { roleId: role.id } });
     if (inUse > 0) return res.status(400).json({ error: `Cannot delete: ${inUse} user(s) still have this role. Reassign them first.` });
     const before = role.toJSON();

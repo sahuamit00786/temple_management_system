@@ -1,7 +1,7 @@
 ﻿import { Router } from 'express';
 import crypto from 'crypto';
 import { Op, fn, col } from 'sequelize';
-import { Transaction, TransactionItem, User, Role } from '../db.js';
+import { sequelize, Transaction, TransactionItem, User, Role } from '../db.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 import { can } from '../middleware/can.js';
 import { audit } from '../middleware/audit.js';
@@ -92,19 +92,38 @@ r.get('/', can('pos', 'view'), async (req, res, next) => {
 r.put('/:id', can('pos', 'edit'), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const { paymentMode, devoteeName, devoteeId } = req.body;
-    const before = await Transaction.findByPk(id);
+    const { paymentMode, devoteeName, devoteeId, starNatchathiram, items } = req.body;
+    const before = await Transaction.findByPk(id, { include: [{ model: TransactionItem, as: 'items' }] });
     if (!before) return res.status(404).json({ error: 'Not found' });
     if (before.status === 'CANCELLED') return res.status(400).json({ error: 'Cannot edit a cancelled transaction' });
     const data = {};
     if (paymentMode) data.paymentMode = paymentMode;
     if (devoteeName !== undefined) data.devoteeName = devoteeName;
     if (devoteeId !== undefined) data.devoteeId = devoteeId || null;
-    await Transaction.update(data, { where: { id } });
+    if (starNatchathiram !== undefined) data.starNatchathiram = starNatchathiram || null;
+    if (Array.isArray(items)) {
+      if (!items.length) return res.status(400).json({ error: 'Order needs at least one item' });
+      data.total = items.reduce((s, i) => s + Number(i.priceSnapshot) * (i.qty || 1), 0);
+    }
+    await sequelize.transaction(async (t) => {
+      await Transaction.update(data, { where: { id }, transaction: t });
+      if (Array.isArray(items)) {
+        await TransactionItem.destroy({ where: { transactionId: id }, transaction: t });
+        await TransactionItem.bulkCreate(items.map((i) => ({
+          transactionId: id,
+          lookupValueId: i.lookupValueId,
+          nameSnapshot: i.nameSnapshot,
+          nameTa: i.nameTa || null,
+          priceSnapshot: i.priceSnapshot,
+          qty: i.qty || 1,
+          lineTotal: Number(i.priceSnapshot) * (i.qty || 1),
+        })), { transaction: t });
+      }
+    });
     const tx = await Transaction.findByPk(id, {
       include: [{ model: TransactionItem, as: 'items' }, { model: User, as: 'createdBy', attributes: ['name'], include: [{ model: Role, as: 'role', attributes: ['name'] }] }],
     });
-    await audit(req, 'UPDATE', 'Transaction', id, before.toJSON(), { paymentMode, devoteeName });
+    await audit(req, 'UPDATE', 'Transaction', id, before.toJSON(), { paymentMode, devoteeName, total: data.total, items });
     res.json(tx);
   } catch (e) { next(e); }
 });

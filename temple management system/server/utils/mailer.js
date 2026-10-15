@@ -22,8 +22,8 @@ export async function sendOtpEmail(to, name, otp) {
   await transporter.sendMail({
     from,
     to,
-    subject: 'Password Reset OTP — TMADJ Temple',
-    text: `Hi ${name},\n\nYour OTP for password reset is: ${otp}\n\nValid for 10 minutes. Do not share this code.\n\n— TMADJ Temple`,
+    subject: 'Password Reset OTP — Temple Management System',
+    text: `Hi ${name},\n\nYour OTP for password reset is: ${otp}\n\nValid for 10 minutes. Do not share this code.\n\n— Temple Management System`,
     html: `
 <!DOCTYPE html>
 <html>
@@ -35,8 +35,7 @@ export async function sendOtpEmail(to, name, otp) {
 
         <!-- Header -->
         <tr><td style="background:#5C1A1B;padding:28px 32px;text-align:center;">
-          <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.04em;">TMADJ Temple</div>
-          <div style="font-size:12px;color:#e8c88a;margin-top:4px;">Thirumurugan Aalayam Desa Jaya Kepong</div>
+          <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.04em;">Temple Management System</div>
         </td></tr>
 
         <!-- Body -->
@@ -66,7 +65,7 @@ export async function sendOtpEmail(to, name, otp) {
         <!-- Footer -->
         <tr><td style="background:#f5f0e8;padding:16px 32px;text-align:center;border-top:1px solid #e8dcc8;">
           <div style="font-size:11px;color:#aaa;">
-            &copy; ${new Date().getFullYear()} Thirumurugan Aalayam Desa Jaya Kepong &nbsp;·&nbsp; Om Sakthi
+            &copy; ${new Date().getFullYear()} Temple Management System
           </div>
         </td></tr>
 

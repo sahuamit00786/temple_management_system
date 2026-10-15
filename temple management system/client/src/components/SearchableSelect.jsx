@@ -72,7 +72,7 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 mt-1 left-0 min-w-[180px] bg-white border border-gold-300/60 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-[9999] mt-1 left-0 min-w-[180px] bg-white border border-gold-300/60 rounded-lg shadow-lg overflow-hidden">
           {/* Search */}
           <div className="p-2 border-b border-cream-200">
             <div className="relative">

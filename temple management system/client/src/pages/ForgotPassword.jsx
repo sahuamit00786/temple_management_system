@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client.js';
+import PasswordInput from '../components/PasswordInput.jsx';
 
 async function post(path, body) {
   return api(`/auth${path}`, { method: 'POST', body });
@@ -175,8 +176,8 @@ function StepNewPassword({ resetToken, onDone }) {
       <div className="space-y-4">
         <div>
           <label className="label">New password</label>
-          <input
-            className="input" type="password" placeholder="Min. 8 characters" autoFocus
+          <PasswordInput
+            placeholder="Min. 8 characters" autoFocus
             value={password} onChange={(e) => setPassword(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
           />
@@ -184,8 +185,8 @@ function StepNewPassword({ resetToken, onDone }) {
         </div>
         <div>
           <label className="label">Confirm password</label>
-          <input
-            className="input" type="password" placeholder="Re-enter password"
+          <PasswordInput
+            placeholder="Re-enter password"
             value={confirm} onChange={(e) => setConfirm(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
           />

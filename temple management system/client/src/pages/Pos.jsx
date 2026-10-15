@@ -12,6 +12,7 @@ import DataGrid from '../components/DataGrid.jsx';
 import SearchableSelect from '../components/SearchableSelect.jsx';
 import Tabs from '../components/Tabs.jsx';
 import Chit, { buildChitHtml, ChitContent } from '../print/Chit.jsx';
+import { Toast, useToast } from '../components/Toast.jsx';
 import { api, qs } from '../api/client.js';
 import { queueTransaction } from '../db/syncEngine.js';
 import { ldb } from '../db/dexie.js';
@@ -106,6 +107,9 @@ export default function Pos() {
   const mobileChitIframeRef = useRef(null);
   const [cartPreviewOpen, setCartPreviewOpen] = useState(false);
   const [prefillSource, setPrefillSource] = useState(null);
+  const [editing, setEditing] = useState(null); // { id, receiptNo, snapshot } while editing an existing order
+  const [savingEdit, setSavingEdit] = useState(false);
+  const { msg: toastMsg, show: showToast, clear: clearToast } = useToast();
   const [receiptPrefix, setReceiptPrefix] = useState(localStorage.getItem('tmadj.receiptPrefix') || 'ORD');
   const [receiptDigits, setReceiptDigits] = useState(Number(localStorage.getItem('tmadj.receiptDigits') || 6));
 
@@ -169,20 +173,46 @@ export default function Pos() {
     } catch (e) { setCancelErr(e.message); }
   };
 
+  const formSnapshot = (c, name, dId, sId) => JSON.stringify({
+    cart: c.map((i) => [i.lookupValueId, i.qty, Number(i.priceSnapshot)]),
+    name: name || '', dId: dId || null, sId: sId || '',
+  });
+
+  // Edit an existing order in place (no new order is created)
   const loadFromOrder = (t) => {
     const newCart = (t.items || []).map((i) => ({
       lookupValueId: i.lookupValueId,
       nameSnapshot: i.nameSnapshot,
+      nameTa: i.nameTa || null,
       priceSnapshot: Number(i.priceSnapshot),
       qty: i.qty || 1,
       kind: t.kind,
     }));
+    const sId = String(stars.find((s) => s.nameEn === t.starNatchathiram)?.id || '');
     setCart(newCart);
     setDevoteeName(t.devoteeName || '');
     setDevoteeId(t.devoteeId || null);
-    setStarId('');
-    setPrefillSource(t.receiptNo || t.localChitNo);
+    setStarId(sId);
+    setPrefillSource(null);
+    setEditing({ id: t.id, receiptNo: t.receiptNo, snapshot: formSnapshot(newCart, t.devoteeName, t.devoteeId, sId), paymentMode: t.paymentMode });
     setPosTab('create');
+  };
+
+  const clearForm = () => { setCart([]); setDevoteeName(''); setDevoteeId(null); setStarId(''); setPrefillSource(null); setEditing(null); };
+
+  const saveEdit = async () => {
+    setSavingEdit(true);
+    try {
+      const updated = await api(`/transactions/${editing.id}`, {
+        method: 'PUT',
+        body: { items: cart, devoteeName: devoteeName || null, devoteeId: devoteeId || null, starNatchathiram: starName || null },
+      });
+      setLastChit(updated);
+      clearForm();
+      loadOrders();
+      showToast(`Order ${updated.receiptNo || ''} updated`);
+    } catch (e) { showToast(e.message || 'Failed to save order'); }
+    finally { setSavingEdit(false); }
   };
 
   const stars = lookups.NATCHATHIRAM?.values || [];
@@ -233,6 +263,7 @@ export default function Pos() {
     setCart((c) => c.map((i) => (i.lookupValueId === id ? { ...i, qty } : i)));
   };
 
+  const editDirty = !!editing && formSnapshot(cart, devoteeName, devoteeId, starId) !== editing.snapshot;
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
   const total = cart.reduce((s, i) => s + i.priceSnapshot * i.qty, 0);
   const change = Number(tendered || 0) - total;
@@ -441,7 +472,7 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
               { key: 'actions', label: '', render: (t) => (
                 <span className="flex gap-1">
                   <button className="btn-ghost !p-1.5 text-maroon-700" title="Show chit" onClick={() => setChitHtml(buildChitHtml(t, settings))}><Receipt size={14} /></button>
-                  {can('pos', 'create') && <button className="btn-ghost !p-1.5" title="Re-create with same items" onClick={() => loadFromOrder(t)}><Pencil size={14} /></button>}
+                  {can('pos', 'edit') && t.id && t.status !== 'CANCELLED' && <button className="btn-ghost !p-1.5" title="Edit order" onClick={() => loadFromOrder(t)}><Pencil size={14} /></button>}
                   {can('pos', 'delete') && <button className="btn-ghost !p-1.5 text-kumkum-600" title="Delete order permanently" onClick={() => { setCancelErr(''); setCancelling(t); }}><XCircle size={14} /></button>}
                 </span>
               )},
@@ -518,10 +549,10 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
 
       {posTab === 'create' && <div className="lg:pr-[348px] flex flex-col" style={{ minHeight: 'calc(100vh - 160px)' }}>
 
-        {prefillSource && (
+        {editing && (
           <div className="mb-3 px-4 py-2.5 bg-saffron-100 border border-saffron-300 rounded-lg text-sm text-maroon-900 flex items-center justify-between">
-            <span>Items pre-filled from <b>{prefillSource}</b> — adjust and charge as a new order.</span>
-            <button className="text-ink-600 hover:text-maroon-900 ml-4" onClick={() => { setCart([]); setDevoteeName(''); setDevoteeId(null); setPrefillSource(null); }}>Clear</button>
+            <span>Editing order <b>{editing.receiptNo}</b> — make changes and press Save.</span>
+            <button className="text-ink-600 hover:text-maroon-900 ml-4" onClick={clearForm}>Cancel edit</button>
           </div>
         )}
 
@@ -601,7 +632,11 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
                 <ChitContent chit={livePreviewChit} settings={settings} />
               </div>
 
-              {can('pos', 'create') && (
+              {editing ? (
+                <button className="btn-primary w-full justify-center" disabled={!editDirty || !cart.length || savingEdit} onClick={saveEdit}>
+                  {savingEdit ? 'Saving…' : 'Save'}
+                </button>
+              ) : can('pos', 'create') && (
                 <div className="flex flex-col gap-2">
                   <button className="btn-primary w-full justify-center" disabled={!cart.length} onClick={() => { setTendered(total.toFixed(2)); setPaying('CASH'); }}>
                     <Banknote size={16} /> Cash
@@ -611,7 +646,7 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
                   </button>
                 </div>
               )}
-              {can('pos', 'export') && lastChit && (
+              {!editing && can('pos', 'export') && lastChit && (
                 <button className="btn-ghost w-full justify-center" onClick={() => {
                   const deviceId = getDeviceId(settings);
                   const handleAfterPrint = () => {
@@ -694,7 +729,11 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
             <Printer size={15} /> Print
           </button>
 
-          {can('pos', 'create') && (
+          {editing ? (
+            <button className="btn-primary w-full justify-center" disabled={!editDirty || !cart.length || savingEdit} onClick={() => { setCartPreviewOpen(false); saveEdit(); }}>
+              {savingEdit ? 'Saving…' : 'Save'}
+            </button>
+          ) : can('pos', 'create') && (
             <div className="flex flex-col gap-2">
               <button className="btn-primary w-full justify-center" disabled={!cart.length} onClick={() => { setCartPreviewOpen(false); setTendered(total.toFixed(2)); setPaying('CASH'); }}>
                 <Banknote size={16} /> Cash
@@ -704,7 +743,7 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
               </button>
             </div>
           )}
-          {can('pos', 'export') && lastChit && (
+          {!editing && can('pos', 'export') && lastChit && (
             <button className="btn-ghost w-full justify-center" onClick={() => {
               setCartPreviewOpen(false);
               const deviceId = getDeviceId(settings);
@@ -721,6 +760,7 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
         </div>
       </Modal>
 
+      <Toast message={toastMsg} onClose={clearToast} />
       <Chit chit={lastChit} settings={settings} />
     </div>
   );

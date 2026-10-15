@@ -6,6 +6,7 @@ import { api } from '../api/client.js';
 import { ldb } from '../db/dexie.js';
 import Tabs from '../components/Tabs.jsx';
 import Modal from '../components/Modal.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 import DataTable from '../components/DataTable.jsx';
 import SearchableSelect from '../components/SearchableSelect.jsx';
 import ConfirmModal from '../components/ConfirmModal.jsx';
@@ -16,7 +17,8 @@ const TABS = [
   { key: 'roles', label: 'Roles' },
   { key: 'permissions', label: 'Menu Permissions' },
 ];
-const ACTIONS = ['canView', 'canCreate', 'canEdit', 'canDelete', 'canExport'];
+// Edit/Delete are open to every role, so they are not part of the permission matrix
+const ACTIONS = ['canView', 'canCreate', 'canExport'];
 const ACTION_LABEL = { canView: 'View', canCreate: 'Create', canEdit: 'Edit', canDelete: 'Delete', canExport: 'Export' };
 
 export default function Users() {
@@ -167,11 +169,10 @@ export default function Users() {
               { key: 'name', label: 'Role', render: (r) => <span className="font-medium">{r.name}</span> },
               { key: 'description', label: 'Description' },
               { key: '_count', label: 'Users', render: (r) => r._count?.users ?? 0 },
-              { key: 'isSystem', label: '', render: (r) => r.isSystem && <span className="chip bg-gold-300/30 text-gold-500">System</span> },
               { key: 'actions', label: '', render: (r) => (
                 <div className="flex gap-1">
                   {can('users', 'edit') && <button className="btn-ghost !p-1.5" onClick={() => setNewRole({ id: r.id, name: r.name, description: r.description || '', isSystem: r.isSystem })}><Pencil size={15} /></button>}
-                  {can('users', 'delete') && !r.isSystem && <button className="btn-ghost !p-1.5 text-kumkum-600" onClick={() => setDeletingRole(r)}><Trash2 size={15} /></button>}
+                  {can('users', 'delete') && <button className="btn-ghost !p-1.5 text-kumkum-600" onClick={() => setDeletingRole(r)}><Trash2 size={15} /></button>}
                 </div>
               ) },
             ]}
@@ -181,7 +182,7 @@ export default function Users() {
       )}
 
       {tab === 'permissions' && (
-        <div className="card p-4">
+        <div className="card !overflow-visible p-4">
           <div className="flex flex-wrap items-end gap-3 mb-4">
             <div>
               <label className="label">User</label>
@@ -264,7 +265,7 @@ export default function Users() {
                 onChange={(v) => setEditUser({ ...editUser, roleId: v })}
               />
             </div>
-            <div><label className="label">{editUser.id ? 'New password (leave blank to keep)' : 'Password (min 8 chars)'}</label><input className="input" type="password" placeholder="••••••••" value={editUser.password} onChange={(e) => setEditUser({ ...editUser, password: e.target.value })} /></div>
+            <div><label className="label">{editUser.id ? 'New password (leave blank to keep)' : 'Password (min 8 chars)'}</label><PasswordInput placeholder="••••••••" value={editUser.password} onChange={(e) => setEditUser({ ...editUser, password: e.target.value })} /></div>
             {editUser.id && (
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" className="w-4 h-4 accent-saffron-500" checked={editUser.isActive ?? true} onChange={(e) => setEditUser({ ...editUser, isActive: e.target.checked })} />
@@ -283,7 +284,7 @@ export default function Users() {
       <Modal title={newRole?.id ? `Edit ${newRole.name}` : 'Add role'} open={!!newRole} onClose={() => setNewRole(null)}>
         {newRole && (
           <div className="space-y-3">
-            <div><label className="label">Role name</label><input className="input" placeholder="e.g. Cashier" disabled={!!newRole.isSystem} value={newRole.name} onChange={(e) => setNewRole({ ...newRole, name: e.target.value })} /></div>
+            <div><label className="label">Role name</label><input className="input" placeholder="e.g. Cashier" value={newRole.name} onChange={(e) => setNewRole({ ...newRole, name: e.target.value })} /></div>
             <div><label className="label">Description</label><input className="input" placeholder="Brief description of this role" value={newRole.description} onChange={(e) => setNewRole({ ...newRole, description: e.target.value })} /></div>
             <div className="flex justify-end gap-2">
               <button className="btn-ghost" onClick={() => setNewRole(null)}>Cancel</button>

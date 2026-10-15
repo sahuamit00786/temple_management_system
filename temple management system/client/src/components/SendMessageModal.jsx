@@ -89,7 +89,8 @@ export default function SendMessageModal({ open, onClose, devotee, booking, even
   const [selectedBookingFull, setSelectedBookingFull] = useState(null);
 
   
-  const getEventTypeName = (id) => eventTypes.find((t) => t.id === id)?.nameEn || '';
+  const getEventType = (id) => eventTypes.find((t) => Number(t.id) === Number(id));
+  const getEventTypeName = (id) => getEventType(id)?.nameEn || '';
 
   // Load devotee bookings if no booking provided
   useEffect(() => {
@@ -124,7 +125,12 @@ export default function SendMessageModal({ open, onClose, devotee, booking, even
   const tpl = visibleTemplates.find((t) => t.id === tplId) || null;
   const usesBooking = tplUsesBookingFields(tpl?.body);
 
-  const activeBooking = booking || selectedBookingFull || null;
+  let activeBooking = booking || selectedBookingFull || null;
+  // Stored hallRate can be empty for bookings migrated to the eventtype table — fall back to the event type price
+  if (activeBooking && !Number(activeBooking.hallRate)) {
+    const price = getEventType(activeBooking.eventTypeId)?.price;
+    if (price != null) activeBooking = { ...activeBooking, hallRate: Number(price) };
+  }
   const activeEventTypeName = eventTypeName || (activeBooking ? getEventTypeName(activeBooking.eventTypeId) : '');
   const ctx = buildCtx(devotee, activeBooking, activeEventTypeName);
 
