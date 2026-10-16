@@ -2,9 +2,10 @@
 import { Op, fn, col } from 'sequelize';
 import { Transaction, HallBooking, Devotee } from '../db.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
+import { can } from '../middleware/can.js';
 
 const r = Router();
-r.use(requireAuth);
+r.use(requireAuth, can('dashboard', 'view'));
 
 r.get('/summary', async (req, res, next) => {
   try {

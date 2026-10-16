@@ -17,9 +17,20 @@ const TABS = [
   { key: 'roles', label: 'Roles' },
   { key: 'permissions', label: 'Menu Permissions' },
 ];
-// Edit/Delete are open to every role, so they are not part of the permission matrix
-const ACTIONS = ['canView', 'canCreate', 'canExport'];
+const ACTIONS = ['canView', 'canCreate', 'canEdit', 'canDelete', 'canExport'];
 const ACTION_LABEL = { canView: 'View', canCreate: 'Create', canEdit: 'Edit', canDelete: 'Delete', canExport: 'Export' };
+
+// View is the prerequisite for every other action: granting any action grants View,
+// revoking View revokes everything.
+function applyToggle(row, action, checked) {
+  const next = { ...row, [action]: checked };
+  if (action === 'canView') {
+    if (!checked) for (const a of ACTIONS) next[a] = false;
+  } else if (checked) {
+    next.canView = true;
+  }
+  return next;
+}
 
 export default function Users() {
   const { can, user: me, online } = useApp();
@@ -238,7 +249,7 @@ export default function Users() {
                             className="w-4 h-4 accent-saffron-500"
                             disabled={permRole?.name === 'Superadmin'}
                             checked={permRole?.name === 'Superadmin' ? true : row[a]}
-                            onChange={(e) => setMatrix((m) => m.map((r, j) => j === i ? { ...r, [a]: e.target.checked } : r))}
+                            onChange={(e) => setMatrix((m) => m.map((r, j) => j === i ? applyToggle(r, a, e.target.checked) : r))}
                           />
                         </td>
                       ))}

@@ -5,7 +5,7 @@ import { requireAuth } from '../middleware/authMiddleware.js';
 import { can } from '../middleware/can.js';
 
 const r = Router();
-r.use(requireAuth);
+r.use(requireAuth, can('payments', 'view'));
 
 r.get('/', async (req, res, next) => {
   try {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTabParam } from '../hooks/useTabParam.js';
 import { downloadName } from '../branding.js';
 import { useSearchParams } from 'react-router-dom';
-import { Minus, Plus, Printer, QrCode, Banknote, Search, Pencil, XCircle, Receipt, RotateCcw, Download } from 'lucide-react';
+import { Minus, Plus, Printer, QrCode, Banknote, Search, Pencil, XCircle, Receipt, RotateCcw, Download, WifiOff } from 'lucide-react';
 // Search kept for All Orders search bar
 import { useApp } from '../auth/AppContext.jsx';
 import Modal from '../components/Modal.jsx';
@@ -208,7 +208,7 @@ export default function Pos() {
         body: { items: cart, devoteeName: devoteeName || null, devoteeId: devoteeId || null, starNatchathiram: starName || null },
       });
       setLastChit(updated);
-      clearForm();
+      setEditing((e) => ({ ...e, snapshot: formSnapshot(cart, devoteeName, devoteeId, starId), paymentMode: updated.paymentMode }));
       loadOrders();
       showToast(`Order ${updated.receiptNo || ''} updated`);
     } catch (e) { showToast(e.message || 'Failed to save order'); }
@@ -264,6 +264,8 @@ export default function Pos() {
   };
 
   const editDirty = !!editing && formSnapshot(cart, devoteeName, devoteeId, starId) !== editing.snapshot;
+  // While editing, changes must be saved before payment
+  const payDisabled = !cart.length || editDirty;
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
   const total = cart.reduce((s, i) => s + i.priceSnapshot * i.qty, 0);
   const change = Number(tendered || 0) - total;
@@ -292,7 +294,28 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
   };
 
+  // Hard refresh resets all POS state (cart, editing, payment, last chit)
+  const newOrder = () => { window.location.assign('/pos?tab=create'); };
+
+  // Pay an already-saved order: update its payment mode instead of creating a new sale
+  const payEditedOrder = async (paymentMode) => {
+    try {
+      const updated = await api(`/transactions/${editing.id}`, {
+        method: 'PUT',
+        body: { paymentMode, items: cart, devoteeName: devoteeName || null, devoteeId: devoteeId || null, starNatchathiram: starName || null },
+      });
+      setLastChit({ ...updated, tendered: paymentMode === 'CASH' ? Number(tendered) : updated.total });
+      setLastPayMode(paymentMode);
+      setPaying(null); setTendered('');
+      clearForm();
+      loadOrders();
+      showToast(`Order ${updated.receiptNo || ''} paid`);
+      setTimeout(() => window.print(), 200);
+    } catch (e) { showToast(e.message || 'Failed to record payment'); }
+  };
+
   const completeSale = async (paymentMode) => {
+    if (editing) return payEditedOrder(paymentMode);
     const chit = {
       clientUuid: crypto.randomUUID(),
       localChitNo: nextLocalChit(receiptPrefix, receiptDigits),
@@ -632,33 +655,24 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
                 <ChitContent chit={livePreviewChit} settings={settings} />
               </div>
 
-              {editing ? (
+              {editing && (
                 <button className="btn-primary w-full justify-center" disabled={!editDirty || !cart.length || savingEdit} onClick={saveEdit}>
                   {savingEdit ? 'Saving…' : 'Save'}
                 </button>
-              ) : can('pos', 'create') && (
+              )}
+              {(editing ? can('pos', 'edit') : can('pos', 'create')) && (
                 <div className="flex flex-col gap-2">
-                  <button className="btn-primary w-full justify-center" disabled={!cart.length} onClick={() => { setTendered(total.toFixed(2)); setPaying('CASH'); }}>
+                  <button className="btn-primary w-full justify-center" disabled={payDisabled} onClick={() => { setTendered(total.toFixed(2)); setPaying('CASH'); }}>
                     <Banknote size={16} /> Cash
                   </button>
-                  <button className="btn-outline w-full justify-center" disabled={!cart.length} onClick={() => { setTendered(total.toFixed(2)); setPaying('DUITNOW_QR'); }}>
+                  <button className="btn-outline w-full justify-center" disabled={payDisabled} onClick={() => { setTendered(total.toFixed(2)); setPaying('DUITNOW_QR'); }}>
                     <QrCode size={16} /> DuitNow QR
                   </button>
                 </div>
               )}
-              {!editing && can('pos', 'export') && lastChit && (
-                <button className="btn-ghost w-full justify-center" onClick={() => {
-                  const deviceId = getDeviceId(settings);
-                  const handleAfterPrint = () => {
-                    savePrinterPreference(deviceId, 'user-selected');
-                    window.removeEventListener('afterprint', handleAfterPrint);
-                  };
-                  window.addEventListener('afterprint', handleAfterPrint);
-                  window.print();
-                }}>
-                  <Printer size={15} /> Reprint last receipt
-                </button>
-              )}
+              <button className="btn-outline w-full justify-center" onClick={newOrder}>
+                <Plus size={15} /> New Order
+              </button>
 
             </div>
           </div>
@@ -729,34 +743,24 @@ const previewChitNo = `${receiptPrefix}-${'X'.repeat(receiptDigits)}`;
             <Printer size={15} /> Print
           </button>
 
-          {editing ? (
+          {editing && (
             <button className="btn-primary w-full justify-center" disabled={!editDirty || !cart.length || savingEdit} onClick={() => { setCartPreviewOpen(false); saveEdit(); }}>
               {savingEdit ? 'Saving…' : 'Save'}
             </button>
-          ) : can('pos', 'create') && (
+          )}
+          {(editing ? can('pos', 'edit') : can('pos', 'create')) && (
             <div className="flex flex-col gap-2">
-              <button className="btn-primary w-full justify-center" disabled={!cart.length} onClick={() => { setCartPreviewOpen(false); setTendered(total.toFixed(2)); setPaying('CASH'); }}>
+              <button className="btn-primary w-full justify-center" disabled={payDisabled} onClick={() => { setCartPreviewOpen(false); setTendered(total.toFixed(2)); setPaying('CASH'); }}>
                 <Banknote size={16} /> Cash
               </button>
-              <button className="btn-outline w-full justify-center" disabled={!cart.length} onClick={() => { setCartPreviewOpen(false); setTendered(total.toFixed(2)); setPaying('DUITNOW_QR'); }}>
+              <button className="btn-outline w-full justify-center" disabled={payDisabled} onClick={() => { setCartPreviewOpen(false); setTendered(total.toFixed(2)); setPaying('DUITNOW_QR'); }}>
                 <QrCode size={16} /> DuitNow QR
               </button>
             </div>
           )}
-          {!editing && can('pos', 'export') && lastChit && (
-            <button className="btn-ghost w-full justify-center" onClick={() => {
-              setCartPreviewOpen(false);
-              const deviceId = getDeviceId(settings);
-              const handleAfterPrint = () => {
-                savePrinterPreference(deviceId, 'user-selected');
-                window.removeEventListener('afterprint', handleAfterPrint);
-              };
-              window.addEventListener('afterprint', handleAfterPrint);
-              window.print();
-            }}>
-              <Printer size={15} /> Reprint last receipt
-            </button>
-          )}
+          <button className="btn-outline w-full justify-center" onClick={newOrder}>
+            <Plus size={15} /> New Order
+          </button>
         </div>
       </Modal>
 

@@ -88,8 +88,8 @@ export function AppProvider({ children }) {
   const can = (menuKey, action = 'view') => {
     if (!user) return false;
     if (user.role === 'Superadmin') return true;
-    if (action === 'edit' || action === 'delete') return true;
-    return Boolean(user.permissions?.[menuKey]?.[action]);
+    const p = user.permissions?.[menuKey];
+    return Boolean(p && (action === 'view' || p.view) && p[action]);
   };
 
   return (

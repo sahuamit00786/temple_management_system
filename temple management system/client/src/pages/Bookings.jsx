@@ -697,7 +697,7 @@ export default function Bookings() {
                               <span className={`font-semibold tabular-nums ${isCancelled ? 'line-through' : 'text-maroon-900'}`}>{RM(t.total)}</span>
                               {isCancelled ? (
                                 <span className="chip-cancelled text-xs">Cancelled</span>
-                              ) : (
+                              ) : !can('bookings', 'edit') ? null : (
                                 <span className="flex gap-1">
                                   <button className="btn-ghost !p-1 text-ink-600" title="Edit payment" onClick={() => setEditPaymentRow({ id: t.id, amount: t.total, paymentMode: t.paymentMode })}><Pencil size={13} /></button>
                                   <button className="btn-ghost !p-1 text-kumkum-600" title="Cancel payment" onClick={() => setDeletingPaymentId(t.id)}><Trash2 size={13} /></button>

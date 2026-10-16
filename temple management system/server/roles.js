@@ -55,7 +55,8 @@ r.put('/:id/permissions', can('users', 'edit'), async (req, res, next) => {
     for (const p of req.body.permissions) {
       await RolePermission.upsert({
         roleId, menuItemId: p.menuItemId,
-        canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete, canExport: p.canExport,
+        canView: Boolean(p.canView || p.canCreate || p.canEdit || p.canDelete || p.canExport),
+        canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete, canExport: p.canExport,
       });
     }
     await audit(req, 'UPDATE', 'RolePermission', roleId, null, req.body.permissions);
