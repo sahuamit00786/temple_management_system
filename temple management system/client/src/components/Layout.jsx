@@ -75,9 +75,12 @@ export default function Layout() {
         </nav>
         <div className={`py-4 border-t border-white/20 flex items-center gap-2 ${collapsed ? 'justify-center px-2' : 'justify-between px-5'}`}>
           {!collapsed && (
-            <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-2 cursor-help"
+              title={'v1.2\n• Menu permission fixes\n• Order edit: save changes, then pay (Cash / DuitNow QR); New Order button'}
+            >
               <img src="/icons/diya.svg" alt="" className="w-5 h-5 opacity-80" />
-              <span className="text-[11px] text-gold-300 tracking-widest">v1.1</span>
+              <span className="text-[11px] text-gold-300 tracking-widest">v1.2</span>
             </div>
           )}
           <button
